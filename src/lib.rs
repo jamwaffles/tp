@@ -4,7 +4,9 @@ struct Lim {
     jerk: f32,
 }
 
-fn tp(q0: f32, q1: f32, v0: f32, v1: f32, lim: Lim) {
+fn tp(t: f32, q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim) -> bool {
+    print!("t {}", t);
+
     let delta = q1 - q0;
 
     // 3.31
@@ -70,6 +72,72 @@ fn tp(q0: f32, q1: f32, v0: f32, v1: f32, lim: Lim) {
 
     // No constant velocity section
     if t_v < 0.0 {
-        //
+        todo!("Max velocity not reached");
+    }
+
+    let total_time = 2.0 * t_j1 + t_a + t_v + 2.0 * t_j2 + t_d;
+
+    // Accel phase, max jerk
+    if t < t_j1 {
+        println!("--> Accel, max jerk");
+    }
+    // Accel phase, zero jerk
+    else if t < (t_a - t_j1) {
+        println!("--> Accel, zero jerk");
+    }
+    // Accel phase, min jerk
+    else if t < t_a {
+        println!("--> Accel, min jerk");
+    }
+    // Coast
+    else if t < t_a + t_v {
+        println!("--> Coast");
+    }
+    // Decel, max jerk
+    else if t < total_time - (t_d + t_j2) {
+        println!("--> Decel, max jerk");
+    }
+    // Decel, zero jerk
+    else if t < total_time - t_j2 {
+        println!("--> Decel, zero jerk");
+    }
+    // Decel, min jerk
+    else if t <= total_time {
+        println!("--> Decel, min jerk");
+    }
+    // Out of bounds!
+    else {
+        return false;
+    }
+
+    true
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn it() {
+        // These values give two S curves with constant acceleration sections AND a coast section.
+        let q0 = 0.0;
+        let q1 = 20.0;
+        let v0 = 0.0;
+        let v1 = 0.0;
+        let lim = Lim {
+            vel: 10.0,
+            acc: 10.0,
+            jerk: 40.0,
+        };
+
+        let mut t = 0.0f32;
+
+        while t < 20.0 {
+            if !tp(t, q0, q1, v0, v1, &lim) {
+                break;
+            }
+
+            t += 0.1;
+        }
     }
 }
