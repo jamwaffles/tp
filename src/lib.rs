@@ -1,10 +1,11 @@
+#[derive(Debug, Clone, Copy)]
 struct Lim {
     vel: f32,
     acc: f32,
     jerk: f32,
 }
 
-fn tp(t: f32, q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim) -> bool {
+fn tp(t: f32, q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim) -> (f32, Lim, bool) {
     print!("t {}", t);
 
     let delta = q1 - q0;
@@ -107,10 +108,10 @@ fn tp(t: f32, q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim) -> bool {
     }
     // Out of bounds!
     else {
-        return false;
+        return (total_time, lim, false);
     }
 
-    true
+    (total_time, lim, true)
 }
 
 #[cfg(test)]
@@ -132,10 +133,12 @@ mod tests {
 
         let mut t = 0.0f32;
 
-        while t < 20.0 {
-            if !tp(t, q0, q1, v0, v1, &lim) {
-                break;
-            }
+        let (total_time, _, _) = tp(t, q0, q1, v0, v1, &lim);
+
+        while t <= total_time {
+            let (_, values, _) = tp(t, q0, q1, v0, v1, &lim);
+
+            println!("vel {} acc {} jerk {}", values.vel, values.acc, values.jerk);
 
             t += 0.1;
         }
