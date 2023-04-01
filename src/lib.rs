@@ -5,8 +5,16 @@ struct Lim {
     jerk: f32,
 }
 
-fn tp(t: f32, q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim) -> (f32, Lim, bool) {
-    print!("t {}", t);
+#[derive(Debug, Default, Clone, Copy)]
+struct Out {
+    pos: f32,
+    vel: f32,
+    acc: f32,
+    jerk: f32,
+}
+
+fn tp(t: f32, q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim) -> (f32, Out, bool) {
+    println!("t {}", t);
 
     let delta = q1 - q0;
 
@@ -30,6 +38,11 @@ fn tp(t: f32, q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim) -> (f32, Lim, bool)
         acc: amax,
         jerk: jmax,
     } = lim;
+
+    // Symmetrical profiles for now
+    let vmin = -vmax;
+    let amin = -amax;
+    let jmin = -jmax;
 
     let max_accel_reached = (vmax - v0) * jmax < amax.powi(2);
     let max_decel_reached = (vmax - v1) * jmax < amax.powi(2);
@@ -78,40 +91,163 @@ fn tp(t: f32, q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim) -> (f32, Lim, bool)
 
     let total_time = 2.0 * t_j1 + t_a + t_v + 2.0 * t_j2 + t_d;
 
+    // Acceleration reached
+    let a_lim_a = jmax * t_j1;
+    let a_lim_d = -jmax * t_j2;
+
+    // Velocity reached
+    let vlim = v0 + (t_a - t_j1) * a_lim_a;
+
     // Accel phase, max jerk
     if t < t_j1 {
         println!("--> Accel, max jerk");
+
+        let pos = q0 + (v0 * t) + (jmax * t.powi(3) / 6.0);
+        let vel = v0 + jmax * t.powi(2) / 2.0;
+        let acc = jmax.powf(t);
+        let jerk = jmax;
+
+        (
+            total_time,
+            Out {
+                pos,
+                vel,
+                acc,
+                jerk,
+            },
+            true,
+        )
     }
     // Accel phase, zero jerk
     else if t < (t_a - t_j1) {
         println!("--> Accel, zero jerk");
+
+        let pos =
+            q0 + (v0 * t) + (a_lim_a / 6.0) * (3.0 * t.powi(2) - 3.0 * t_j1 * t + t_j1.powi(2));
+        let vel = v0 + a_lim_a * (t - t_j1 / 2.0);
+        let acc = a_lim_a;
+        let jerk = 0.0;
+
+        (
+            total_time,
+            Out {
+                pos,
+                vel,
+                acc,
+                jerk,
+            },
+            true,
+        )
     }
     // Accel phase, min jerk
     else if t < t_a {
         println!("--> Accel, min jerk");
+
+        let pos = q0 + (vlim + v0) * t_a / 2.0 - vlim * (t_a - t) - jmin * (t_a - t).powi(3) / 6.0;
+        let vel = vlim + jmin * (t_a - t).powi(2) / 2.0;
+        let acc = -jmin * (t_a - t);
+        let jerk = -jmin;
+
+        (
+            total_time,
+            Out {
+                pos,
+                vel,
+                acc,
+                jerk,
+            },
+            true,
+        )
     }
     // Coast
     else if t < t_a + t_v {
         println!("--> Coast");
+
+        let pos = q0 + (vlim + v0) * t_a / 2.0 + vlim * (t - t_a);
+        let vel = vlim;
+        let acc = 0.0;
+        let jerk = 0.0;
+
+        (
+            total_time,
+            Out {
+                pos,
+                vel,
+                acc,
+                jerk,
+            },
+            true,
+        )
     }
     // Decel, max jerk
     else if t < total_time - (t_d + t_j2) {
         println!("--> Decel, max jerk");
+
+        let pos = q1 - (vlim + v1) * t_d / 2.0 + vlim * (t - total_time + t_d)
+            - jmax * (t - total_time + t_d).powi(3) / 6.0;
+        let vel = vlim - jmax * (t - total_time + t_d).powi(2) / 2.0;
+        let acc = -jmax * (t - total_time + t_d);
+        let jerk = jmin;
+
+        (
+            total_time,
+            Out {
+                pos,
+                vel,
+                acc,
+                jerk,
+            },
+            true,
+        )
     }
     // Decel, zero jerk
     else if t < total_time - t_j2 {
         println!("--> Decel, zero jerk");
+
+        let pos = q1 - (vlim + v1) * t_d / 2.0
+            + vlim * (t - total_time + t_d)
+            + a_lim_d / 6.0
+                * (3.0 * (t - total_time + t_d).powi(2) - 3.0 * t_j2 * (t - total_time + t_d)
+                    + t_j2.powi(2));
+        let vel = vlim + a_lim_d * (t - total_time + t_d - t_j2 / 2.0);
+        let acc = a_lim_d;
+        let jerk = 0.0;
+
+        (
+            total_time,
+            Out {
+                pos,
+                vel,
+                acc,
+                jerk,
+            },
+            true,
+        )
     }
     // Decel, min jerk
     else if t <= total_time {
         println!("--> Decel, min jerk");
+
+        let pos = q1 - v1 * (total_time - t) - jmax * (total_time - t).powi(3) / 6.0;
+        let vel = v1 + jmax * (total_time - t).powi(2) / 2.0;
+        let acc = -jmax * (total_time - t);
+        let jerk = jmin;
+
+        (
+            total_time,
+            Out {
+                pos,
+                vel,
+                acc,
+                jerk,
+            },
+            true,
+        )
     }
     // Out of bounds!
     else {
-        return (total_time, lim, false);
+        (total_time, Out::default(), false)
     }
-
-    (total_time, lim, true)
 }
 
 #[cfg(test)]
@@ -138,7 +274,10 @@ mod tests {
         while t <= total_time {
             let (_, values, _) = tp(t, q0, q1, v0, v1, &lim);
 
-            println!("vel {} acc {} jerk {}", values.vel, values.acc, values.jerk);
+            println!(
+                "pos {}, vel {} acc {} jerk {}",
+                values.pos, values.vel, values.acc, values.jerk
+            );
 
             t += 0.1;
         }
