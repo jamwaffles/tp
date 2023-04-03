@@ -1,19 +1,19 @@
 #[derive(Debug, Clone, Copy)]
-struct Lim {
-    vel: f32,
-    acc: f32,
-    jerk: f32,
+pub struct Lim {
+    pub vel: f32,
+    pub acc: f32,
+    pub jerk: f32,
 }
 
 #[derive(Debug, Default, Clone, Copy)]
-struct Out {
-    pos: f32,
-    vel: f32,
-    acc: f32,
-    jerk: f32,
+pub struct Out {
+    pub pos: f32,
+    pub vel: f32,
+    pub acc: f32,
+    pub jerk: f32,
 }
 
-fn tp(t: f32, q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim) -> (f32, Out, bool) {
+pub fn tp(t: f32, q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim) -> (f32, Out, bool) {
     println!("t {}", t);
 
     let delta = q1 - q0;

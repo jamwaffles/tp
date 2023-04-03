@@ -5,28 +5,22 @@ use std::rc::Rc;
 use gtk::prelude::*;
 use plotters::prelude::*;
 use plotters_cairo::CairoBackend;
+use tp::Lim;
 
 const GLADE_UI_SOURCE: &'static str = include_str!("ui.glade");
 
 #[derive(Clone, Copy)]
 struct PlottingState {
-    mean_x: f64,
-    mean_y: f64,
-    std_x: f64,
-    std_y: f64,
-    pitch: f64,
-    roll: f64,
+    q0: f64,
+    q1: f64,
+    v0: f64,
+    v1: f64,
+    lim_vel: f64,
+    lim_acc: f64,
+    lim_jerk: f64,
 }
 
 impl PlottingState {
-    fn guassian_pdf(&self, x: f64, y: f64) -> f64 {
-        let x_diff = (x - self.mean_x) / self.std_x;
-        let y_diff = (y - self.mean_y) / self.std_y;
-        let exponent = -(x_diff * x_diff + y_diff * y_diff) / 2.0;
-        let denom = (2.0 * std::f64::consts::PI / self.std_x / self.std_y).sqrt();
-        let gaussian_pdf = 1.0 / denom;
-        gaussian_pdf * exponent.exp()
-    }
     fn plot_pdf<'a, DB: DrawingBackend + 'a>(
         &self,
         backend: DB,
@@ -35,33 +29,35 @@ impl PlottingState {
 
         root.fill(&WHITE)?;
 
-        let mut chart = ChartBuilder::on(&root).build_cartesian_3d(
-            -10.0f64..10.0,
-            0.0f64..1.2,
-            -10.0f64..10.0,
-        )?;
+        // TODO
 
-        chart.with_projection(|mut p| {
-            p.pitch = self.pitch;
-            p.yaw = self.roll;
-            p.scale = 0.7;
-            p.into_matrix() // build the projection matrix
-        });
+        // let mut chart = ChartBuilder::on(&root).build_cartesian_3d(
+        //     -10.0f64..10.0,
+        //     0.0f64..1.2,
+        //     -10.0f64..10.0,
+        // )?;
 
-        chart
-            .configure_axes()
-            .light_grid_style(BLACK.mix(0.15))
-            .max_light_lines(3)
-            .draw()?;
-        let self_cloned = self.clone();
-        chart.draw_series(
-            SurfaceSeries::xoz(
-                (-50..=50).map(|x| x as f64 / 5.0),
-                (-50..=50).map(|x| x as f64 / 5.0),
-                move |x, y| self_cloned.guassian_pdf(x, y),
-            )
-            .style_func(&|&v| (&HSLColor(240.0 / 360.0 - 240.0 / 360.0 * v, 1.0, 0.7)).into()),
-        )?;
+        // chart.with_projection(|mut p| {
+        //     p.pitch = self.pitch;
+        //     p.yaw = self.roll;
+        //     p.scale = 0.7;
+        //     p.into_matrix() // build the projection matrix
+        // });
+
+        // chart
+        //     .configure_axes()
+        //     .light_grid_style(BLACK.mix(0.15))
+        //     .max_light_lines(3)
+        //     .draw()?;
+        // let self_cloned = self.clone();
+        // chart.draw_series(
+        //     SurfaceSeries::xoz(
+        //         (-50..=50).map(|x| x as f64 / 5.0),
+        //         (-50..=50).map(|x| x as f64 / 5.0),
+        //         move |x, y| self_cloned.guassian_pdf(x, y),
+        //     )
+        //     .style_func(&|&v| (&HSLColor(240.0 / 360.0 - 240.0 / 360.0 * v, 1.0, 0.7)).into()),
+        // )?;
 
         root.present()?;
         Ok(())
@@ -75,20 +71,23 @@ fn build_ui(app: &gtk::Application) {
     window.set_title("Gaussian PDF Plotter");
 
     let drawing_area: gtk::DrawingArea = builder.object("MainDrawingArea").unwrap();
-    let pitch_scale = builder.object::<gtk::Scale>("PitchScale").unwrap();
-    let yaw_scale = builder.object::<gtk::Scale>("YawScale").unwrap();
-    let mean_x_scale = builder.object::<gtk::Scale>("MeanXScale").unwrap();
-    let mean_y_scale = builder.object::<gtk::Scale>("MeanYScale").unwrap();
-    let std_x_scale = builder.object::<gtk::Scale>("SDXScale").unwrap();
-    let std_y_scale = builder.object::<gtk::Scale>("SDYScale").unwrap();
+
+    let q0_scale = builder.object::<gtk::Scale>("Q0Scale").unwrap();
+    let q1_scale = builder.object::<gtk::Scale>("Q1Scale").unwrap();
+    let v0_scale = builder.object::<gtk::Scale>("V0Scale").unwrap();
+    let v1_scale = builder.object::<gtk::Scale>("V1Scale").unwrap();
+    let lim_vel_scale = builder.object::<gtk::Scale>("VELscale").unwrap();
+    let lim_acc_scale = builder.object::<gtk::Scale>("ACCscale").unwrap();
+    let lim_jerk_scale = builder.object::<gtk::Scale>("JERKscale").unwrap();
 
     let app_state = Rc::new(RefCell::new(PlottingState {
-        mean_x: mean_x_scale.value(),
-        mean_y: mean_y_scale.value(),
-        std_x: std_x_scale.value(),
-        std_y: std_y_scale.value(),
-        pitch: pitch_scale.value(),
-        roll: yaw_scale.value(),
+        q0: q0_scale.value(),
+        q1: q1_scale.value(),
+        v0: v0_scale.value(),
+        v1: v1_scale.value(),
+        lim_vel: lim_vel_scale.value(),
+        lim_acc: lim_acc_scale.value(),
+        lim_jerk: lim_jerk_scale.value(),
     }));
 
     window.set_application(Some(app));
@@ -114,21 +113,19 @@ fn build_ui(app: &gtk::Application) {
             });
         };
 
-    handle_change(&pitch_scale, Box::new(|s| &mut s.pitch));
-    handle_change(&yaw_scale, Box::new(|s| &mut s.roll));
-    handle_change(&mean_x_scale, Box::new(|s| &mut s.mean_x));
-    handle_change(&mean_y_scale, Box::new(|s| &mut s.mean_y));
-    handle_change(&std_x_scale, Box::new(|s| &mut s.std_x));
-    handle_change(&std_y_scale, Box::new(|s| &mut s.std_y));
+    handle_change(&q0_scale, Box::new(|s| &mut s.q0));
+    handle_change(&q1_scale, Box::new(|s| &mut s.q1));
+    handle_change(&v0_scale, Box::new(|s| &mut s.v0));
+    handle_change(&v1_scale, Box::new(|s| &mut s.v1));
+    handle_change(&lim_vel_scale, Box::new(|s| &mut s.lim_vel));
+    handle_change(&lim_acc_scale, Box::new(|s| &mut s.lim_acc));
+    handle_change(&lim_jerk_scale, Box::new(|s| &mut s.lim_jerk));
 
     window.show_all();
 }
 
 fn main() {
-    let application = gtk::Application::new(
-        Some("io.github.plotters-rs.plotters-gtk-demo"),
-        Default::default(),
-    );
+    let application = gtk::Application::new(Some("io.tp-debugger"), Default::default());
 
     application.connect_activate(|app| {
         build_ui(app);
