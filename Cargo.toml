@@ -11,7 +11,7 @@ gio = "0.17.0"
 gtk = "0.17.0"
 
 # Rev makes it work with plotters-cairo below
-plotters = { git = "https://github.com/plotters-rs/plotters.git" }
+plotters = { git = "https://github.com/plotters-rs/plotters.git", default_features = false, features = [ "line_series", "full_palette" ] }
 
 # Cairo 0.17 upgrade
 plotters-cairo = { git = "https://github.com/plotters-rs/plotters-cairo.git", rev = "515ab36f59ff28f1c0db7d98b410d51a7bbf9677" }

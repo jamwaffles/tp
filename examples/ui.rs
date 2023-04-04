@@ -4,6 +4,7 @@ use std::rc::Rc;
 
 use gtk::prelude::*;
 use plotters::prelude::*;
+use plotters::style::full_palette;
 use plotters_cairo::CairoBackend;
 use tp::Lim;
 
@@ -29,35 +30,117 @@ impl PlottingState {
 
         root.fill(&WHITE)?;
 
-        // TODO
+        let lim = Lim {
+            vel: self.lim_vel as f32,
+            acc: self.lim_acc as f32,
+            jerk: self.lim_jerk as f32,
+        };
 
-        // let mut chart = ChartBuilder::on(&root).build_cartesian_3d(
-        //     -10.0f64..10.0,
-        //     0.0f64..1.2,
-        //     -10.0f64..10.0,
-        // )?;
+        let max = lim.vel.max(lim.acc).max(lim.jerk);
+        let min = -max;
 
-        // chart.with_projection(|mut p| {
-        //     p.pitch = self.pitch;
-        //     p.yaw = self.roll;
-        //     p.scale = 0.7;
-        //     p.into_matrix() // build the projection matrix
-        // });
+        let (total_time, _, _) = tp::tp(
+            0.0,
+            self.q0 as f32,
+            self.q1 as f32,
+            self.v0 as f32,
+            self.v1 as f32,
+            &lim,
+        );
 
-        // chart
-        //     .configure_axes()
-        //     .light_grid_style(BLACK.mix(0.15))
-        //     .max_light_lines(3)
-        //     .draw()?;
-        // let self_cloned = self.clone();
-        // chart.draw_series(
-        //     SurfaceSeries::xoz(
-        //         (-50..=50).map(|x| x as f64 / 5.0),
-        //         (-50..=50).map(|x| x as f64 / 5.0),
-        //         move |x, y| self_cloned.guassian_pdf(x, y),
-        //     )
-        //     .style_func(&|&v| (&HSLColor(240.0 / 360.0 - 240.0 / 360.0 * v, 1.0, 0.7)).into()),
-        // )?;
+        let mut chart = ChartBuilder::on(&root)
+            // .caption("y=x^2", ("sans-serif", 50).into_font())
+            .margin(5)
+            .x_label_area_size(30)
+            .y_label_area_size(30)
+            .build_cartesian_2d(0.0f32..total_time, (min - 0.2)..(max + 0.2))?;
+
+        chart.configure_mesh().draw()?;
+
+        let pos = LineSeries::new(
+            (0..=(total_time * 100.0) as u32).map(|t| {
+                let t = (t as f32) / 100.0;
+
+                let (_, out, _) = tp::tp(
+                    t,
+                    self.q0 as f32,
+                    self.q1 as f32,
+                    self.v0 as f32,
+                    self.v1 as f32,
+                    &lim,
+                );
+
+                (t, out.pos)
+            }),
+            &full_palette::DEEPORANGE,
+        );
+
+        let vel = LineSeries::new(
+            (0..=(total_time * 100.0) as u32).map(|t| {
+                let t = (t as f32) / 100.0;
+
+                let (_, out, _) = tp::tp(
+                    t,
+                    self.q0 as f32,
+                    self.q1 as f32,
+                    self.v0 as f32,
+                    self.v1 as f32,
+                    &lim,
+                );
+
+                (t, out.vel)
+            }),
+            &full_palette::GREEN,
+        );
+
+        let acc = LineSeries::new(
+            (0..=(total_time * 100.0) as u32).map(|t| {
+                let t = (t as f32) / 100.0;
+
+                let (_, out, _) = tp::tp(
+                    t,
+                    self.q0 as f32,
+                    self.q1 as f32,
+                    self.v0 as f32,
+                    self.v1 as f32,
+                    &lim,
+                );
+
+                (t, out.acc)
+            }),
+            &full_palette::BLUE,
+        );
+
+        let jerk = LineSeries::new(
+            (0..=(total_time * 100.0) as u32).map(|t| {
+                let t = (t as f32) / 100.0;
+
+                let (_, out, _) = tp::tp(
+                    t,
+                    self.q0 as f32,
+                    self.q1 as f32,
+                    self.v0 as f32,
+                    self.v1 as f32,
+                    &lim,
+                );
+
+                (t, out.jerk)
+            }),
+            &full_palette::BROWN,
+        );
+
+        chart.draw_series(pos)?;
+        chart.draw_series(vel)?;
+        chart.draw_series(acc)?;
+        chart.draw_series(jerk)?;
+        // .label("y = x^2")
+        // .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &RED));
+
+        chart
+            .configure_series_labels()
+            .background_style(&WHITE.mix(0.8))
+            .border_style(&BLACK)
+            .draw()?;
 
         root.present()?;
         Ok(())
@@ -68,7 +151,7 @@ fn build_ui(app: &gtk::Application) {
     let builder = gtk::Builder::from_string(GLADE_UI_SOURCE);
     let window = builder.object::<gtk::Window>("MainWindow").unwrap();
 
-    window.set_title("Gaussian PDF Plotter");
+    window.set_title("TP debugger");
 
     let drawing_area: gtk::DrawingArea = builder.object("MainDrawingArea").unwrap();
 
@@ -76,9 +159,9 @@ fn build_ui(app: &gtk::Application) {
     let q1_scale = builder.object::<gtk::Scale>("Q1Scale").unwrap();
     let v0_scale = builder.object::<gtk::Scale>("V0Scale").unwrap();
     let v1_scale = builder.object::<gtk::Scale>("V1Scale").unwrap();
-    let lim_vel_scale = builder.object::<gtk::Scale>("VELscale").unwrap();
-    let lim_acc_scale = builder.object::<gtk::Scale>("ACCscale").unwrap();
-    let lim_jerk_scale = builder.object::<gtk::Scale>("JERKscale").unwrap();
+    let lim_vel_scale = builder.object::<gtk::Scale>("VELScale").unwrap();
+    let lim_acc_scale = builder.object::<gtk::Scale>("ACCScale").unwrap();
+    let lim_jerk_scale = builder.object::<gtk::Scale>("JERKScale").unwrap();
 
     let app_state = Rc::new(RefCell::new(PlottingState {
         q0: q0_scale.value(),
