@@ -129,16 +129,26 @@ impl PlottingState {
             &full_palette::BROWN,
         );
 
-        chart.draw_series(pos)?;
-        chart.draw_series(vel)?;
-        chart.draw_series(acc)?;
-        chart.draw_series(jerk)?;
-        // .label("y = x^2")
-        // .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &RED));
+        chart
+            .draw_series(pos)?
+            .label("Pos")
+            .legend(|(x, y)| Rectangle::new([(x, y + 1), (x + 8, y)], full_palette::DEEPORANGE));
+        chart
+            .draw_series(vel)?
+            .label("Vel")
+            .legend(|(x, y)| Rectangle::new([(x, y + 1), (x + 8, y)], full_palette::GREEN));
+        chart
+            .draw_series(acc)?
+            .label("Acc")
+            .legend(|(x, y)| Rectangle::new([(x, y + 1), (x + 8, y)], full_palette::BLUE));
+        chart
+            .draw_series(jerk)?
+            .label("Jerk")
+            .legend(|(x, y)| Rectangle::new([(x, y + 1), (x + 8, y)], full_palette::BROWN));
 
         chart
             .configure_series_labels()
-            .background_style(&WHITE.mix(0.8))
+            .position(SeriesLabelPosition::UpperRight)
             .border_style(&BLACK)
             .draw()?;
 
