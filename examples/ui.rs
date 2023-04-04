@@ -19,6 +19,10 @@ struct PlottingState {
     lim_vel: f64,
     lim_acc: f64,
     lim_jerk: f64,
+    show_pos: bool,
+    show_vel: bool,
+    show_acc: bool,
+    show_jerk: bool,
 }
 
 impl PlottingState {
@@ -55,7 +59,7 @@ impl PlottingState {
             .y_label_area_size(30)
             .build_cartesian_2d(0.0f32..total_time, (min - 0.2)..(max + 0.2))?;
 
-        chart.configure_mesh().draw()?;
+        // chart.configure_mesh().draw()?;
 
         let pos = LineSeries::new(
             (0..=(total_time * 100.0) as u32).map(|t| {
@@ -129,22 +133,32 @@ impl PlottingState {
             &full_palette::BROWN,
         );
 
-        chart
-            .draw_series(pos)?
-            .label("Pos")
-            .legend(|(x, y)| Rectangle::new([(x, y + 1), (x + 8, y)], full_palette::DEEPORANGE));
-        chart
-            .draw_series(vel)?
-            .label("Vel")
-            .legend(|(x, y)| Rectangle::new([(x, y + 1), (x + 8, y)], full_palette::GREEN));
-        chart
-            .draw_series(acc)?
-            .label("Acc")
-            .legend(|(x, y)| Rectangle::new([(x, y + 1), (x + 8, y)], full_palette::BLUE));
-        chart
-            .draw_series(jerk)?
-            .label("Jerk")
-            .legend(|(x, y)| Rectangle::new([(x, y + 1), (x + 8, y)], full_palette::BROWN));
+        if self.show_pos {
+            chart.draw_series(pos)?.label("Pos").legend(|(x, y)| {
+                Rectangle::new([(x, y + 1), (x + 8, y)], full_palette::DEEPORANGE)
+            });
+        }
+
+        if self.show_vel {
+            chart
+                .draw_series(vel)?
+                .label("Vel")
+                .legend(|(x, y)| Rectangle::new([(x, y + 1), (x + 8, y)], full_palette::GREEN));
+        }
+
+        if self.show_acc {
+            chart
+                .draw_series(acc)?
+                .label("Acc")
+                .legend(|(x, y)| Rectangle::new([(x, y + 1), (x + 8, y)], full_palette::BLUE));
+        }
+
+        if self.show_jerk {
+            chart
+                .draw_series(jerk)?
+                .label("Jerk")
+                .legend(|(x, y)| Rectangle::new([(x, y + 1), (x + 8, y)], full_palette::BROWN));
+        }
 
         chart
             .configure_series_labels()
@@ -173,6 +187,11 @@ fn build_ui(app: &gtk::Application) {
     let lim_acc_scale = builder.object::<gtk::Scale>("ACCScale").unwrap();
     let lim_jerk_scale = builder.object::<gtk::Scale>("JERKScale").unwrap();
 
+    let show_pos = builder.object::<gtk::ToggleButton>("POSShow").unwrap();
+    let show_vel = builder.object::<gtk::ToggleButton>("VELShow").unwrap();
+    let show_acc = builder.object::<gtk::ToggleButton>("ACCShow").unwrap();
+    let show_jerk = builder.object::<gtk::ToggleButton>("JERKShow").unwrap();
+
     let app_state = Rc::new(RefCell::new(PlottingState {
         q0: q0_scale.value(),
         q1: q1_scale.value(),
@@ -181,6 +200,10 @@ fn build_ui(app: &gtk::Application) {
         lim_vel: lim_vel_scale.value(),
         lim_acc: lim_acc_scale.value(),
         lim_jerk: lim_jerk_scale.value(),
+        show_pos: show_pos.is_active(),
+        show_vel: show_vel.is_active(),
+        show_acc: show_acc.is_active(),
+        show_jerk: show_jerk.is_active(),
     }));
 
     window.set_application(Some(app));
@@ -206,6 +229,17 @@ fn build_ui(app: &gtk::Application) {
             });
         };
 
+    let handle_bool_change =
+        |what: &gtk::ToggleButton, how: Box<dyn Fn(&mut PlottingState) -> &mut bool + 'static>| {
+            let app_state = app_state.clone();
+            let drawing_area = drawing_area.clone();
+            what.connect_toggled(move |target| {
+                let mut state = app_state.borrow_mut();
+                *how(&mut *state) = target.is_active();
+                drawing_area.queue_draw();
+            });
+        };
+
     handle_change(&q0_scale, Box::new(|s| &mut s.q0));
     handle_change(&q1_scale, Box::new(|s| &mut s.q1));
     handle_change(&v0_scale, Box::new(|s| &mut s.v0));
@@ -213,6 +247,10 @@ fn build_ui(app: &gtk::Application) {
     handle_change(&lim_vel_scale, Box::new(|s| &mut s.lim_vel));
     handle_change(&lim_acc_scale, Box::new(|s| &mut s.lim_acc));
     handle_change(&lim_jerk_scale, Box::new(|s| &mut s.lim_jerk));
+    handle_bool_change(&show_pos, Box::new(|s| &mut s.show_pos));
+    handle_bool_change(&show_vel, Box::new(|s| &mut s.show_vel));
+    handle_bool_change(&show_acc, Box::new(|s| &mut s.show_acc));
+    handle_bool_change(&show_jerk, Box::new(|s| &mut s.show_jerk));
 
     window.show_all();
 }

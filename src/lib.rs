@@ -106,8 +106,6 @@ pub fn tp(t: f32, q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim) -> (f32, Out, b
 
     // Accel phase, max jerk
     if t < t_j1 {
-        println!("--> Accel, max jerk");
-
         let pos = q0 + (v0 * t) + (jmax * t.powi(3) / 6.0);
         let vel = v0 + jmax * t.powi(2) / 2.0;
         let acc = jmax.powf(t);
