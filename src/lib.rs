@@ -13,7 +13,49 @@ pub struct Out {
     pub jerk: f32,
 }
 
-pub fn tp(t: f32, q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim) -> (f32, Out, bool) {
+#[derive(Debug, Default, Clone, Copy)]
+pub struct Times {
+    pub t_j1: f32,
+    pub t_j2: f32,
+    pub t_d: f32,
+    pub t_a: f32,
+    pub t_v: f32,
+    pub total_time: f32,
+}
+
+pub fn is_feasible(q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim) -> bool {
+    let Lim {
+        acc: amax,
+        jerk: jmax,
+        ..
+    } = lim;
+
+    let t_j_star = (f32::abs(v1 - v0) / jmax).sqrt().min(amax / jmax);
+
+    let delta = q1 - q0;
+
+    let limit = amax / jmax;
+
+    let comp = if t_j_star < limit {
+        t_j_star * (v0 + v1)
+    } else if t_j_star == limit {
+        0.5 * (v0 + v1) * (t_j_star + (v1 - v0).abs() / amax)
+    } else {
+        return false;
+    };
+
+    delta > comp
+}
+
+pub fn tp(
+    t: f32,
+    q0: f32,
+    q1: f32,
+    v0: f32,
+    v1: f32,
+    lim: &Lim,
+    times: &mut Times,
+) -> (f32, Out, bool) {
     let delta = q1 - q0;
 
     // 3.31
@@ -31,6 +73,10 @@ pub fn tp(t: f32, q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim) -> (f32, Out, b
         jerk: sign * lim.jerk,
     };
 
+    if !is_feasible(q0, q1, v0, v1, &lim) {
+        return (0.0, Out::default(), true);
+    }
+
     let Lim {
         vel: vmax,
         acc: amax,
@@ -42,11 +88,11 @@ pub fn tp(t: f32, q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim) -> (f32, Out, b
     let amin = -amax;
     let jmin = -jmax;
 
-    let max_accel_reached = (vmax - v0) * jmax < amax.powi(2);
-    let max_decel_reached = (vmax - v1) * jmax < amax.powi(2);
+    let max_accel_not_reached = (vmax - v0) * jmax < amax.powi(2);
+    let max_decel_not_reached = (vmax - v1) * jmax < amax.powi(2);
 
     // Acceleration time Ta
-    let (mut t_j1, mut t_a) = if max_accel_reached {
+    let (mut t_j1, mut t_a) = if max_accel_not_reached {
         // The time that jerk is constant during accel
         let t_j1 = f32::sqrt((vmax - v0) / jmax);
         // Acceleration period
@@ -63,24 +109,28 @@ pub fn tp(t: f32, q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim) -> (f32, Out, b
     };
 
     // Deceleration time Td
-    let (mut t_j2, mut t_d) = if max_decel_reached {
+    let (mut t_j2, mut t_d) = if max_decel_not_reached {
         // The time that jerk is constant during accel
         let t_j2 = f32::sqrt((vmax - v1) / jmax);
-        // Acceleration period
+        // Deceleration period
         let t_d = 2.0 * t_j2;
 
         (t_j2, t_d)
     } else {
         // The time that jerk is constant during accel
         let t_j2 = amax / jmax;
-        // Acceleration period
+        // Deceleration period
         let t_d = t_j2 + ((vmax - v1) / amax);
 
         (t_j2, t_d)
     };
 
     // 3.25 duration of constant velocity
-    let t_v = (delta / vmax) - (t_a / 2.0) * (1.0 + v0 / vmax) - (t_d / 2.0) * (1.0 + v1 / vmax);
+    let mut t_v =
+        (delta / vmax) - (t_a / 2.0) * (1.0 + v0 / vmax) - (t_d / 2.0) * (1.0 + v1 / vmax);
+
+    // Greatest velocity reached
+    let vlim;
 
     // No constant velocity section
     if t_v < 0.0 {
@@ -93,22 +143,37 @@ pub fn tp(t: f32, q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim) -> (f32, Out, b
 
         t_a = (amax.powi(2) / jmax - 2.0 * v0 + delta.sqrt()) / 2.0 * amax;
         t_d = (amax.powi(2) / jmax - 2.0 * v1 + delta.sqrt()) / 2.0 * amax;
+
+        t_v = 0.0;
+
+        vlim = v0 + (t_a - t_j1) * jmax * t_j1;
+    } else {
+        vlim = vmax;
     }
 
-    let total_time = 2.0 * t_j1 + t_a + t_v + 2.0 * t_j2 + t_d;
+    let total_time = t_a + t_v + t_d;
 
     // Acceleration reached
     let a_lim_a = jmax * t_j1;
     let a_lim_d = -jmax * t_j2;
 
-    // Velocity reached
-    let vlim = v0 + (t_a - t_j1) * a_lim_a;
+    // // Velocity reached
+    // let vlim = v0 + (t_a - t_j1) * a_lim_a;
+
+    *times = Times {
+        t_j1,
+        t_j2,
+        t_d,
+        t_a,
+        t_v,
+        total_time,
+    };
 
     // Accel phase, max jerk
     if t < t_j1 {
         let pos = q0 + (v0 * t) + (jmax * t.powi(3) / 6.0);
         let vel = v0 + jmax * t.powi(2) / 2.0;
-        let acc = jmax.powf(t);
+        let acc = jmax * t;
         let jerk = jmax;
 
         (
@@ -146,7 +211,7 @@ pub fn tp(t: f32, q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim) -> (f32, Out, b
         let pos = q0 + (vlim + v0) * t_a / 2.0 - vlim * (t_a - t) - jmin * (t_a - t).powi(3) / 6.0;
         let vel = vlim + jmin * (t_a - t).powi(2) / 2.0;
         let acc = -jmin * (t_a - t);
-        let jerk = -jmin;
+        let jerk = jmin;
 
         (
             total_time,
@@ -183,7 +248,7 @@ pub fn tp(t: f32, q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim) -> (f32, Out, b
             - jmax * (t - total_time + t_d).powi(3) / 6.0;
         let vel = vlim - jmax * (t - total_time + t_d).powi(2) / 2.0;
         let acc = -jmax * (t - total_time + t_d);
-        let jerk = jmin;
+        let jerk = jmax;
 
         (
             total_time,
@@ -261,10 +326,12 @@ mod tests {
 
         let mut t = 0.0f32;
 
-        let (total_time, _, _) = tp(t, q0, q1, v0, v1, &lim);
+        let mut times = Times::default();
+
+        let (total_time, _, _) = tp(t, q0, q1, v0, v1, &lim, &mut times);
 
         while t <= total_time {
-            let (_, values, _) = tp(t, q0, q1, v0, v1, &lim);
+            let (_, values, _) = tp(t, q0, q1, v0, v1, &lim, &mut times);
 
             println!(
                 "pos {}, vel {} acc {} jerk {}",

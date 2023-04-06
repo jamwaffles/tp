@@ -6,7 +6,7 @@ use gtk::prelude::*;
 use plotters::prelude::*;
 use plotters::style::full_palette;
 use plotters_cairo::CairoBackend;
-use tp::Lim;
+use tp::{Lim, Times};
 
 const GLADE_UI_SOURCE: &'static str = include_str!("ui.glade");
 
@@ -50,6 +50,7 @@ impl PlottingState {
             self.v0 as f32,
             self.v1 as f32,
             &lim,
+            &mut Times::default(),
         );
 
         let mut chart = ChartBuilder::on(&root)
@@ -72,6 +73,7 @@ impl PlottingState {
                     self.v0 as f32,
                     self.v1 as f32,
                     &lim,
+                    &mut Times::default(),
                 );
 
                 (t, out.pos)
@@ -90,6 +92,7 @@ impl PlottingState {
                     self.v0 as f32,
                     self.v1 as f32,
                     &lim,
+                    &mut Times::default(),
                 );
 
                 (t, out.vel)
@@ -108,6 +111,7 @@ impl PlottingState {
                     self.v0 as f32,
                     self.v1 as f32,
                     &lim,
+                    &mut Times::default(),
                 );
 
                 (t, out.acc)
@@ -126,6 +130,7 @@ impl PlottingState {
                     self.v0 as f32,
                     self.v1 as f32,
                     &lim,
+                    &mut Times::default(),
                 );
 
                 (t, out.jerk)
@@ -191,6 +196,7 @@ fn build_ui(app: &gtk::Application) {
     let show_vel = builder.object::<gtk::ToggleButton>("VELShow").unwrap();
     let show_acc = builder.object::<gtk::ToggleButton>("ACCShow").unwrap();
     let show_jerk = builder.object::<gtk::ToggleButton>("JERKShow").unwrap();
+    let times = builder.object::<gtk::Label>("Times").unwrap();
 
     let app_state = Rc::new(RefCell::new(PlottingState {
         q0: q0_scale.value(),
@@ -218,14 +224,44 @@ fn build_ui(app: &gtk::Application) {
         Inhibit(false)
     });
 
+    let state_cloned = app_state.clone();
+    times.connect_draw(move |widget, cr| {
+        let state = state_cloned.borrow().clone();
+
+        let mut times = Times::default();
+
+        let (_, _, _) = tp::tp(
+            0.0,
+            state.q0 as f32,
+            state.q1 as f32,
+            state.v0 as f32,
+            state.v1 as f32,
+            &Lim {
+                vel: state.lim_vel as f32,
+                acc: state.lim_acc as f32,
+                jerk: state.lim_jerk as f32,
+            },
+            &mut times,
+        );
+
+        widget.set_text(&format!(
+            "Total {:>5}, t_j1 {:>5}, t_a {:>5}, t_v {:>5}, t_j2 {:>5}, t_d {:>5}",
+            times.total_time, times.t_j1, times.t_a, times.t_v, times.t_j2, times.t_d
+        ));
+
+        Inhibit(false)
+    });
+
     let handle_change =
         |what: &gtk::Scale, how: Box<dyn Fn(&mut PlottingState) -> &mut f64 + 'static>| {
             let app_state = app_state.clone();
             let drawing_area = drawing_area.clone();
+            let times = times.clone();
             what.connect_value_changed(move |target| {
                 let mut state = app_state.borrow_mut();
                 *how(&mut *state) = target.value();
                 drawing_area.queue_draw();
+                times.queue_draw();
             });
         };
 
@@ -233,10 +269,12 @@ fn build_ui(app: &gtk::Application) {
         |what: &gtk::ToggleButton, how: Box<dyn Fn(&mut PlottingState) -> &mut bool + 'static>| {
             let app_state = app_state.clone();
             let drawing_area = drawing_area.clone();
+            let times = times.clone();
             what.connect_toggled(move |target| {
                 let mut state = app_state.borrow_mut();
                 *how(&mut *state) = target.is_active();
                 drawing_area.queue_draw();
+                times.queue_draw();
             });
         };
 
