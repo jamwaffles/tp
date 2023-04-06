@@ -243,7 +243,7 @@ pub fn tp(
         )
     }
     // Decel, max jerk
-    else if t < total_time - (t_d + t_j2) {
+    else if t < total_time - t_d + t_j2 {
         let pos = q1 - (vlim + v1) * t_d / 2.0 + vlim * (t - total_time + t_d)
             - jmax * (t - total_time + t_d).powi(3) / 6.0;
         let vel = vlim - jmax * (t - total_time + t_d).powi(2) / 2.0;
