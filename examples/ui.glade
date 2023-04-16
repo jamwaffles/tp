@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.38.2 -->
+<!-- Generated with glade 3.40.0 -->
 <interface>
   <requires lib="gtk+" version="3.24"/>
   <object class="GtkAdjustment" id="ACC">
@@ -23,6 +23,7 @@
   <object class="GtkAdjustment" id="Q1">
     <property name="lower">-10</property>
     <property name="upper">10</property>
+    <property name="value">1</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
