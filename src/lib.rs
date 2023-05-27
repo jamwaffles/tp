@@ -47,15 +47,7 @@ pub fn is_feasible(q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim) -> bool {
     delta > comp
 }
 
-pub fn tp(
-    t: f32,
-    q0: f32,
-    q1: f32,
-    v0: f32,
-    v1: f32,
-    lim: &Lim,
-    times: &mut Times,
-) -> (f32, Out, bool) {
+pub fn tp(t: f32, q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim, times: &mut Times) -> (f32, Out) {
     let delta = q1 - q0;
 
     // 3.31
@@ -74,7 +66,7 @@ pub fn tp(
     };
 
     if !is_feasible(q0, q1, v0, v1, &lim) {
-        return (0.0, Out::default(), true);
+        return (0.0, Out::default());
     }
 
     let Lim {
@@ -184,7 +176,6 @@ pub fn tp(
                 acc,
                 jerk,
             },
-            true,
         )
     }
     // Accel phase, zero jerk
@@ -203,7 +194,6 @@ pub fn tp(
                 acc,
                 jerk,
             },
-            true,
         )
     }
     // Accel phase, min jerk
@@ -221,7 +211,6 @@ pub fn tp(
                 acc,
                 jerk,
             },
-            true,
         )
     }
     // Coast
@@ -239,7 +228,6 @@ pub fn tp(
                 acc,
                 jerk,
             },
-            true,
         )
     }
     // Decel, max jerk
@@ -258,7 +246,6 @@ pub fn tp(
                 acc,
                 jerk,
             },
-            true,
         )
     }
     // Decel, zero jerk
@@ -280,7 +267,6 @@ pub fn tp(
                 acc,
                 jerk,
             },
-            true,
         )
     }
     // Decel, min jerk
@@ -298,12 +284,11 @@ pub fn tp(
                 acc,
                 jerk,
             },
-            true,
         )
     }
     // Out of bounds!
     else {
-        (total_time, Out::default(), false)
+        (total_time, Out::default())
     }
 }
 
@@ -328,10 +313,10 @@ mod tests {
 
         let mut times = Times::default();
 
-        let (total_time, _, _) = tp(t, q0, q1, v0, v1, &lim, &mut times);
+        let (total_time, _) = tp(t, q0, q1, v0, v1, &lim, &mut times);
 
         while t <= total_time {
-            let (_, values, _) = tp(t, q0, q1, v0, v1, &lim, &mut times);
+            let (_, values) = tp(t, q0, q1, v0, v1, &lim, &mut times);
 
             println!(
                 "pos {}, vel {} acc {} jerk {}",

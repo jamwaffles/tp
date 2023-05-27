@@ -43,7 +43,7 @@ impl PlottingState {
         let max = lim.vel.max(lim.acc).max(lim.jerk);
         let min = -max;
 
-        let (total_time, _, _) = tp::tp(
+        let (total_time, _) = tp::tp(
             0.0,
             self.q0 as f32,
             self.q1 as f32,
@@ -66,7 +66,7 @@ impl PlottingState {
             (0..=(total_time * 100.0) as u32).map(|t| {
                 let t = (t as f32) / 100.0;
 
-                let (_, out, _) = tp::tp(
+                let (_, out) = tp::tp(
                     t,
                     self.q0 as f32,
                     self.q1 as f32,
@@ -85,7 +85,7 @@ impl PlottingState {
             (0..=(total_time * 100.0) as u32).map(|t| {
                 let t = (t as f32) / 100.0;
 
-                let (_, out, _) = tp::tp(
+                let (_, out) = tp::tp(
                     t,
                     self.q0 as f32,
                     self.q1 as f32,
@@ -104,7 +104,7 @@ impl PlottingState {
             (0..=(total_time * 100.0) as u32).map(|t| {
                 let t = (t as f32) / 100.0;
 
-                let (_, out, _) = tp::tp(
+                let (_, out) = tp::tp(
                     t,
                     self.q0 as f32,
                     self.q1 as f32,
@@ -123,7 +123,7 @@ impl PlottingState {
             (0..=(total_time * 100.0) as u32).map(|t| {
                 let t = (t as f32) / 100.0;
 
-                let (_, out, _) = tp::tp(
+                let (_, out) = tp::tp(
                     t,
                     self.q0 as f32,
                     self.q1 as f32,
@@ -225,12 +225,12 @@ fn build_ui(app: &gtk::Application) {
     });
 
     let state_cloned = app_state.clone();
-    times.connect_draw(move |widget, cr| {
+    times.connect_draw(move |widget, _cr| {
         let state = state_cloned.borrow().clone();
 
         let mut times = Times::default();
 
-        let (_, _, _) = tp::tp(
+        let (_, _) = tp::tp(
             0.0,
             state.q0 as f32,
             state.q1 as f32,
