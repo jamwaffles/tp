@@ -23,7 +23,7 @@ pub struct Times {
     pub total_time: f32,
 }
 
-pub fn is_feasible(q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim) -> bool {
+fn is_feasible(q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim) -> bool {
     let Lim {
         acc: amax,
         jerk: jmax,
@@ -85,7 +85,7 @@ pub struct Segment {
 }
 
 impl Segment {
-    pub fn new(start_t: f32, q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim) -> Self {
+    fn new(start_t: f32, q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim) -> Self {
         let delta = q1 - q0;
 
         // 3.31
@@ -207,7 +207,7 @@ impl Segment {
         }
     }
 
-    pub fn tp(&self, t: f32) -> Option<Out> {
+    fn tp(&self, t: f32) -> Option<Out> {
         let t = t - self.start_t;
 
         if t < 0.0 {
