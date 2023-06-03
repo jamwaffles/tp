@@ -6,7 +6,7 @@ use gtk::prelude::*;
 use plotters::prelude::*;
 use plotters::style::full_palette;
 use plotters_cairo::CairoBackend;
-use tp::{Lim, Times};
+use tp::scurve::{tp, Lim, Times};
 
 const GLADE_UI_SOURCE: &'static str = include_str!("ui.glade");
 
@@ -43,7 +43,7 @@ impl PlottingState {
         let max = lim.vel.max(lim.acc).max(lim.jerk);
         let min = -max;
 
-        let (total_time, _) = tp::tp(
+        let (total_time, _) = tp(
             0.0,
             self.q0 as f32,
             self.q1 as f32,
@@ -66,7 +66,7 @@ impl PlottingState {
             (0..=(total_time * 100.0) as u32).map(|t| {
                 let t = (t as f32) / 100.0;
 
-                let (_, out) = tp::tp(
+                let (_, out) = tp(
                     t,
                     self.q0 as f32,
                     self.q1 as f32,
@@ -85,7 +85,7 @@ impl PlottingState {
             (0..=(total_time * 100.0) as u32).map(|t| {
                 let t = (t as f32) / 100.0;
 
-                let (_, out) = tp::tp(
+                let (_, out) = tp(
                     t,
                     self.q0 as f32,
                     self.q1 as f32,
@@ -104,7 +104,7 @@ impl PlottingState {
             (0..=(total_time * 100.0) as u32).map(|t| {
                 let t = (t as f32) / 100.0;
 
-                let (_, out) = tp::tp(
+                let (_, out) = tp(
                     t,
                     self.q0 as f32,
                     self.q1 as f32,
@@ -123,7 +123,7 @@ impl PlottingState {
             (0..=(total_time * 100.0) as u32).map(|t| {
                 let t = (t as f32) / 100.0;
 
-                let (_, out) = tp::tp(
+                let (_, out) = tp(
                     t,
                     self.q0 as f32,
                     self.q1 as f32,
@@ -230,7 +230,7 @@ fn build_ui(app: &gtk::Application) {
 
         let mut times = Times::default();
 
-        let (_, _) = tp::tp(
+        let (_, _) = tp(
             0.0,
             state.q0 as f32,
             state.q1 as f32,
