@@ -38,26 +38,17 @@ struct Segment {
     /// Final velocity.
     v1: f32,
 
-    t_j1: f32,
-    /// Acceleration duration.
+    /// Total time.
+    total_time: f32,
+
+    /// Acceleration time.
     t_a: f32,
-    /// Maximum accel reached during acceleration phase.
-    a_lim_a: f32,
-    /// Maximum accel reached during deceleration phase.
-    a_lim_d: f32,
-    t_j2: f32,
-    /// Deceleration duration.
-    t_d: f32,
-    /// Constant velocity duration.
-    t_v: f32,
 
     /// Highest velocity reached in this segment.
     vlim: f32,
 
     /// Limits provided by the user.
     lim: Lim,
-    /// Whether this segment is feasible/valid or not.
-    feasible: bool,
 }
 
 impl Segment {
@@ -82,11 +73,63 @@ impl Segment {
             v_max = a_max * t_a;
         }
 
-        todo!()
+        Self {
+            start_t,
+            t: total_time,
+            q0,
+            q1,
+            v0,
+            v1,
+            t_a,
+            vlim: v_max,
+            lim: *lim,
+            total_time,
+        }
     }
 
     fn tp(&self, t: f32) -> Option<Out> {
-        todo!()
+        // Accel
+        if t < self.t_a {
+            let a0 = self.q0;
+            let a1 = 0.0;
+            let a2 = self.vlim / (2.0 * self.t_a);
+
+            Some(Out {
+                pos: a0 + a1 * t + a2 * t.powi(2),
+                vel: a1 + 2.0 * a2 * t,
+                acc: 2.0 * a2,
+                jerk: 0.0,
+            })
+        }
+        // Coast
+        else if t < (self.total_time - self.t_a) {
+            let b0 = self.q0 - (self.vlim * self.t_a) / 2.0;
+            let b1 = self.vlim;
+
+            Some(Out {
+                pos: b0 + b1 * t,
+                vel: b1,
+                acc: 0.0,
+                jerk: 0.0,
+            })
+        }
+        // Decel
+        else if t <= self.total_time {
+            let c0 = self.q1 - (self.vlim * self.total_time.powi(2)) / (2.0 * self.t_a);
+            let c1 = (self.vlim * self.total_time) / self.t_a;
+            let c2 = -(self.vlim / (2.0 * self.t_a));
+
+            Some(Out {
+                pos: c0 + c1 * t + c2 * t.powi(2),
+                vel: c1 + 2.0 * c2 * t,
+                acc: 2.0 * c2,
+                jerk: 0.0,
+            })
+        }
+        // Out of range
+        else {
+            None
+        }
     }
 }
 
@@ -96,11 +139,11 @@ pub fn tp(t: f32, q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim, times: &mut Tim
     let total_time = segment.t;
 
     *times = Times {
-        t_j1: segment.t_j1,
-        t_j2: segment.t_j2,
-        t_d: segment.t_d,
+        t_j1: 0.0,
+        t_j2: 0.0,
+        t_d: 0.0,
         t_a: segment.t_a,
-        t_v: segment.t_v,
+        t_v: 0.0,
         total_time,
     };
 

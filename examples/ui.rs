@@ -6,7 +6,7 @@ use gtk::prelude::*;
 use plotters::prelude::*;
 use plotters::style::full_palette;
 use plotters_cairo::CairoBackend;
-use tp::scurve::{tp, Lim, Times};
+use tp::trapezoidal::{tp, Lim, Times};
 
 const GLADE_UI_SOURCE: &'static str = include_str!("ui.glade");
 
