@@ -1,3 +1,5 @@
+/// Trapezoidal single trajectory segment.
+
 #[derive(Default, Debug, Clone, Copy)]
 pub struct Lim {
     pub vel: f32,
@@ -87,6 +89,7 @@ impl Segment {
         }
     }
 
+    /// Get trajectory parameters at the given time `t`.
     fn tp(&self, t: f32) -> Option<Out> {
         // Accel
         if t < self.t_a {
