@@ -66,9 +66,10 @@ impl Segment {
 
         // Acceleration (and deceleration) duration
         let mut t_a = v_max / a_max;
+        // (3.2.1, eq. 3.8)
         let mut total_time = (h * a_max + v_max.powi(2)) / (a_max * v_max);
 
-        // Max velocity cannot be reached
+        // Max velocity cannot be reached (eq. 3.10)
         if h < v_max.powi(2) / a_max {
             t_a = f32::sqrt(h / a_max);
             total_time = 2.0 * t_a;
