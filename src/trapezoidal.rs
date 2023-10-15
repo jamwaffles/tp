@@ -15,6 +15,19 @@ pub struct Out {
     pub jerk: f32,
 }
 
+impl core::ops::Add for Out {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Self {
+            pos: self.pos + rhs.pos,
+            vel: self.vel + rhs.vel,
+            acc: self.acc + rhs.acc,
+            jerk: self.jerk + rhs.jerk,
+        }
+    }
+}
+
 #[derive(Debug, Default, Clone, Copy)]
 pub struct Times {
     pub t_j1: f32,
@@ -25,8 +38,9 @@ pub struct Times {
     pub total_time: f32,
 }
 
+// TODO: Un-pub
 #[derive(Debug, Default)]
-struct Segment {
+pub struct Segment {
     /// Start time of this segment.
     start_t: f32,
     /// Duration of this segment.
@@ -54,7 +68,7 @@ struct Segment {
 }
 
 impl Segment {
-    fn new(start_t: f32, q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim) -> Self {
+    fn new(q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim) -> Self {
         let Lim {
             vel: mut v_max,
             acc: a_max,
@@ -77,7 +91,7 @@ impl Segment {
         }
 
         Self {
-            start_t,
+            start_t: 0.0,
             t: total_time,
             q0,
             q1,
@@ -92,6 +106,8 @@ impl Segment {
 
     /// Get trajectory parameters at the given time `t`.
     fn tp(&self, t: f32) -> Option<Out> {
+        let t = t - self.start_t;
+
         // Accel
         if t < self.t_a {
             let a0 = self.q0;
@@ -138,7 +154,7 @@ impl Segment {
 }
 
 pub fn tp(t: f32, q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim, times: &mut Times) -> (f32, Out) {
-    let segment = Segment::new(0.0, q0, q1, v0, v1, &lim);
+    let segment = Segment::new(q0, q1, v0, v1, &lim);
 
     let total_time = segment.t;
 
@@ -152,4 +168,69 @@ pub fn tp(t: f32, q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim, times: &mut Tim
     };
 
     (total_time, segment.tp(t).unwrap_or_default())
+}
+
+/// Returns a tuple of total trajectory time + segment properties at `t`.
+pub fn tp_seg(t: f32, segments: &[Segment]) -> (f32, Out) {
+    let segs = segments
+        .iter()
+        .filter_map(|segment| {
+            // Any segment where start time is less than or equal to `t` AND the segment's end
+            // time (s.start_t + s.total_time) is than or equal to `t`
+
+            let in_range = segment.start_t <= t && (segment.start_t + segment.total_time) > t;
+
+            if in_range {
+                segment.tp(t)
+            } else {
+                None
+            }
+        })
+        .fold(Out::default(), |accum, seg| accum + seg);
+
+    // Total time is segment's last time plus its duration. There is no time reduction
+    // due to adjacent segment overlap for the last segment, so that doesn't need to be
+    // accounted for.
+    let total_time = segments
+        .last()
+        .map(|seg| seg.start_t + seg.total_time)
+        .unwrap_or(0.0);
+
+    (total_time, segs)
+}
+
+/// Generate test data for multiple segments
+pub fn make_segments(lim: &Lim) -> Vec<Segment> {
+    let q0 = 0.0;
+    let q1 = 1.0;
+    let q2 = 5.0;
+    let q3 = 10.0;
+
+    // NOTE: Set overlap times to 0 if "come to full stop" option is desired
+
+    let s1 = Segment::new(q0, q1, 0.0, 0.0, &lim);
+
+    let mut s2 = Segment::new(q1, q2, 0.0, 0.0, &lim);
+    let overlap_time = f32::min(s1.t_a, s2.t_a);
+    // DISABLE
+    let overlap_time = 0.0;
+    s2.start_t = s1.start_t + s1.total_time - overlap_time;
+
+    let mut s3 = Segment::new(q2, q3, 0.0, 0.0, &lim);
+    let overlap_time = f32::min(s2.t_a, s3.t_a);
+    // DISABLE
+    let overlap_time = 0.0;
+    s3.start_t = s2.start_t + s2.total_time - overlap_time;
+
+    vec![s1, s2, s3]
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn multi() {
+        //
+    }
 }
