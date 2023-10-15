@@ -204,7 +204,7 @@ pub fn tp_seg(t: f32, segments: &[Segment]) -> (f32, Out) {
 }
 
 /// Generate test data for multiple segments
-pub fn make_segments(lim: &Lim) -> Vec<Segment> {
+pub fn make_segments(lim: &Lim, enable_overlap: bool) -> Vec<Segment> {
     let q0 = 0.0;
     let q1 = 1.0;
     let q2 = 3.0;
@@ -215,15 +215,25 @@ pub fn make_segments(lim: &Lim) -> Vec<Segment> {
     let s1 = Segment::new(q0, q1, 0.0, 0.0, &lim);
 
     let mut s2 = Segment::new(q1, q2, 0.0, 0.0, &lim);
-    let overlap_time = f32::min(s1.t_a, s2.t_a);
-    // DISABLE
-    let overlap_time = 0.0;
+
+    // Disable overlap if desired
+    let overlap_time = if !enable_overlap {
+        0.0
+    } else {
+        f32::min(s1.t_a, s2.t_a)
+    };
+
     s2.start_t = s1.start_t + s1.total_time - overlap_time;
 
     let mut s3 = Segment::new(q2, q3, 0.0, 0.0, &lim);
-    let overlap_time = f32::min(s2.t_a, s3.t_a);
-    // DISABLE
-    let overlap_time = 0.0;
+
+    // Disable overlap if desired
+    let overlap_time = if !enable_overlap {
+        0.0
+    } else {
+        f32::min(s2.t_a, s3.t_a)
+    };
+
     s3.start_t = s2.start_t + s2.total_time - overlap_time;
 
     vec![s1, s2, s3]

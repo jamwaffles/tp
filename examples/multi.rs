@@ -23,6 +23,7 @@ struct PlottingState {
     show_vel: bool,
     show_acc: bool,
     show_jerk: bool,
+    overlap_enabled: bool,
 }
 
 impl PlottingState {
@@ -40,7 +41,7 @@ impl PlottingState {
             jerk: self.lim_jerk as f32,
         };
 
-        let segments = make_segments(&lim);
+        let segments = make_segments(&lim, self.overlap_enabled);
 
         let pos_lim = segments
             .iter()
@@ -164,6 +165,9 @@ fn build_ui(app: &gtk::Application) {
     let show_vel = builder.object::<gtk::ToggleButton>("VELShow").unwrap();
     let show_acc = builder.object::<gtk::ToggleButton>("ACCShow").unwrap();
     let show_jerk = builder.object::<gtk::ToggleButton>("JERKShow").unwrap();
+    let overlap_enabled = builder
+        .object::<gtk::ToggleButton>("OVERLAPEnabled")
+        .unwrap();
     let times = builder.object::<gtk::Label>("Times").unwrap();
 
     let app_state = Rc::new(RefCell::new(PlottingState {
@@ -178,6 +182,7 @@ fn build_ui(app: &gtk::Application) {
         show_vel: show_vel.is_active(),
         show_acc: show_acc.is_active(),
         show_jerk: show_jerk.is_active(),
+        overlap_enabled: overlap_enabled.is_active(),
     }));
 
     dbg!(&app_state);
@@ -204,7 +209,7 @@ fn build_ui(app: &gtk::Application) {
             jerk: state.lim_jerk as f32,
         };
 
-        let (total_time, _) = tp_seg(0.0, &make_segments(&lim));
+        let (total_time, _) = tp_seg(0.0, &make_segments(&lim, state.overlap_enabled));
 
         widget.set_text(&format!("Total {:>5}", total_time));
 
@@ -248,6 +253,7 @@ fn build_ui(app: &gtk::Application) {
     handle_bool_change(&show_vel, Box::new(|s| &mut s.show_vel));
     handle_bool_change(&show_acc, Box::new(|s| &mut s.show_acc));
     handle_bool_change(&show_jerk, Box::new(|s| &mut s.show_jerk));
+    handle_bool_change(&overlap_enabled, Box::new(|s| &mut s.overlap_enabled));
 
     window.show_all();
 }
