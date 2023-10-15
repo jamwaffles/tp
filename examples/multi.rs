@@ -10,7 +10,7 @@ use tp::trapezoidal::{make_segments, tp, tp_seg, Lim};
 
 const GLADE_UI_SOURCE: &'static str = include_str!("multi.glade");
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, Default)]
 struct PlottingState {
     q0: f64,
     q1: f64,
@@ -42,19 +42,25 @@ impl PlottingState {
 
         let segments = make_segments(&lim);
 
-        let max = lim.vel.max(lim.acc).max(lim.jerk);
+        let pos_lim = segments
+            .iter()
+            .map(|seg| seg.final_pos().ceil() as u32)
+            .max()
+            .unwrap_or(0) as f32;
+
+        let max = lim.vel.max(lim.acc).max(lim.jerk).max(pos_lim);
         let min = -max;
 
         let (total_time, _) = tp_seg(0.0, &segments);
 
         let mut chart = ChartBuilder::on(&root)
             // .caption("y=x^2", ("sans-serif", 50).into_font())
-            .margin(5)
+            .margin(10)
             .x_label_area_size(30)
             .y_label_area_size(30)
             .build_cartesian_2d(0.0f32..total_time, (min - 0.2)..(max + 0.2))?;
 
-        // chart.configure_mesh().draw()?;
+        chart.configure_mesh().disable_mesh().draw()?;
 
         let pos = LineSeries::new(
             (0..=(total_time * 100.0) as u32).map(|t| {
@@ -173,6 +179,8 @@ fn build_ui(app: &gtk::Application) {
         show_acc: show_acc.is_active(),
         show_jerk: show_jerk.is_active(),
     }));
+
+    dbg!(&app_state);
 
     window.set_application(Some(app));
 

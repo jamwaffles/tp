@@ -104,6 +104,10 @@ impl Segment {
         }
     }
 
+    pub fn final_pos(&self) -> f32 {
+        self.q1
+    }
+
     /// Get trajectory parameters at the given time `t`.
     fn tp(&self, t: f32) -> Option<Out> {
         let t = t - self.start_t;
@@ -203,8 +207,8 @@ pub fn tp_seg(t: f32, segments: &[Segment]) -> (f32, Out) {
 pub fn make_segments(lim: &Lim) -> Vec<Segment> {
     let q0 = 0.0;
     let q1 = 1.0;
-    let q2 = 5.0;
-    let q3 = 10.0;
+    let q2 = 3.0;
+    let q3 = 7.0;
 
     // NOTE: Set overlap times to 0 if "come to full stop" option is desired
 
