@@ -185,8 +185,6 @@ fn build_ui(app: &gtk::Application) {
         overlap_enabled: overlap_enabled.is_active(),
     }));
 
-    dbg!(&app_state);
-
     window.set_application(Some(app));
 
     let state_cloned = app_state.clone();
