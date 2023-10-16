@@ -69,6 +69,17 @@ pub struct Segment {
 
 impl Segment {
     fn new(q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim) -> Self {
+        // Correct signs for trajectories with negative positions at start and/or end
+        let lim = {
+            let sign = (q1 - q0).signum();
+
+            Lim {
+                vel: lim.vel * sign,
+                acc: lim.acc * sign,
+                jerk: lim.jerk * sign,
+            }
+        };
+
         let Lim {
             vel: mut v_max,
             acc: a_max,
@@ -99,7 +110,7 @@ impl Segment {
             v1,
             t_a,
             vlim: v_max,
-            lim: *lim,
+            lim,
             total_time,
         }
     }
@@ -230,8 +241,8 @@ pub fn tp_seg(t: f32, segments: &[Segment]) -> (f32, Out) {
 pub fn make_segments(lim: &Lim, enable_overlap: bool) -> Vec<Segment> {
     let q0 = 0.0;
     let q1 = 1.0;
-    let q2 = 3.0;
-    let q3 = 7.0;
+    let q2 = -3.0;
+    let q3 = 5.0;
 
     // NOTE: Set overlap times to 0 if "come to full stop" option is desired
 
