@@ -40,7 +40,12 @@ impl PlottingState {
             jerk: self.lim_jerk as f32,
         };
 
-        let max = lim.vel.max(lim.acc).max(lim.jerk);
+        let max = lim
+            .vel
+            .max(lim.acc)
+            .max(lim.jerk)
+            .max(self.q0.abs() as f32)
+            .max(self.q1.abs() as f32);
         let min = -max;
 
         let (total_time, _) = tp(
@@ -60,7 +65,7 @@ impl PlottingState {
             .y_label_area_size(30)
             .build_cartesian_2d(0.0f32..total_time, (min - 0.2)..(max + 0.2))?;
 
-        // chart.configure_mesh().draw()?;
+        chart.configure_mesh().disable_mesh().draw()?;
 
         let pos = LineSeries::new(
             (0..=(total_time * 100.0) as u32).map(|t| {
