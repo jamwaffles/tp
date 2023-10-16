@@ -192,8 +192,8 @@ fn build_ui(app: &gtk::Application) {
         let state = state_cloned.borrow().clone();
         let w = widget.allocated_width();
         let h = widget.allocated_height();
-        let backend = CairoBackend::new(cr, (w as u32, h as u32)).unwrap();
-        state.plot_pdf(backend).unwrap();
+        let backend = CairoBackend::new(cr, (w as u32, h as u32)).expect("Cairo no");
+        state.plot_pdf(backend).expect("Bad plot");
         Inhibit(false)
     });
 
