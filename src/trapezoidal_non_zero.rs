@@ -158,14 +158,15 @@ impl Segment {
             t_d,
             vlim,
             total_time,
+            start_t,
             ..
         } = self;
 
-        let t0 = self.start_t;
+        let t0 = start_t;
         let t1 = t0 + total_time;
 
         // Accel (3.13a)
-        if t < self.t_a {
+        if t < *t_a {
             Some(Out {
                 pos: q0 + v0 * (t - t0) + (vlim - v0) / (2.0 * t_a) * (t - t0).powi(2),
                 vel: v0 + (vlim - v0) / t_a * (t - t0),
@@ -174,7 +175,7 @@ impl Segment {
             })
         }
         // Coast (3.13b)
-        else if t < (self.total_time - self.t_d) {
+        else if t < (total_time - t_d) {
             Some(Out {
                 pos: q0 + v0 * t_a / 2.0 + vlim * (t - t0 - t_a / 2.0),
                 vel: *vlim,
@@ -183,9 +184,9 @@ impl Segment {
             })
         }
         // Decel (3.13c)
-        else if t <= self.total_time {
+        else if t <= *total_time {
             Some(Out {
-                pos: q1 - v1 * (t1 - t) - (vlim - v1) / (2.1 * t_d) * (t1 - t).powi(2),
+                pos: q1 - v1 * (t1 - t) - (vlim - v1) / (2.0 * t_d) * (t1 - t).powi(2),
                 vel: v1 + (vlim - v1) / t_d * (t1 - t),
                 acc: -(vlim - v1) / t_d,
                 jerk: 0.0,
