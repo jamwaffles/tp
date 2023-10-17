@@ -46,7 +46,14 @@ impl PlottingState {
             .max(lim.jerk)
             .max(self.q0.abs() as f32)
             .max(self.q1.abs() as f32);
-        let min = -max;
+        let min = lim
+            .vel
+            .min(lim.acc)
+            .min(lim.jerk)
+            .min(self.q0.abs() as f32)
+            .min(self.q1.abs() as f32);
+
+        let min = -min.max(max);
 
         let (total_time, _) = tp(
             0.0,
@@ -67,9 +74,12 @@ impl PlottingState {
 
         chart.configure_mesh().disable_mesh().draw()?;
 
+        // Number of X samples
+        let points = 500.0;
+
         let pos = LineSeries::new(
-            (0..=(total_time * 100.0) as u32).map(|t| {
-                let t = (t as f32) / 100.0;
+            (0..=(total_time * points) as u32).map(|t| {
+                let t = (t as f32) / points;
 
                 let (_, out) = tp(
                     t,
@@ -87,8 +97,8 @@ impl PlottingState {
         );
 
         let vel = LineSeries::new(
-            (0..=(total_time * 100.0) as u32).map(|t| {
-                let t = (t as f32) / 100.0;
+            (0..=(total_time * points) as u32).map(|t| {
+                let t = (t as f32) / points;
 
                 let (_, out) = tp(
                     t,
@@ -106,8 +116,8 @@ impl PlottingState {
         );
 
         let acc = LineSeries::new(
-            (0..=(total_time * 100.0) as u32).map(|t| {
-                let t = (t as f32) / 100.0;
+            (0..=(total_time * points) as u32).map(|t| {
+                let t = (t as f32) / points;
 
                 let (_, out) = tp(
                     t,
@@ -125,8 +135,8 @@ impl PlottingState {
         );
 
         let jerk = LineSeries::new(
-            (0..=(total_time * 100.0) as u32).map(|t| {
-                let t = (t as f32) / 100.0;
+            (0..=(total_time * points) as u32).map(|t| {
+                let t = (t as f32) / points;
 
                 let (_, out) = tp(
                     t,
