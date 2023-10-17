@@ -72,7 +72,7 @@ impl PlottingState {
             .y_label_area_size(30)
             .build_cartesian_2d(0.0f32..total_time, (min - 0.2)..(max + 0.2))?;
 
-        chart.configure_mesh().disable_mesh().draw()?;
+        chart.configure_mesh().max_light_lines(0).draw()?;
 
         // Number of X samples
         let points = 500.0;
