@@ -112,6 +112,10 @@ impl Segment {
         let t_a = (vlim - v0) / a_max;
         let t_d = (vlim - v1) / a_max;
 
+        // If we need to decelerate twice instead of accelerating then decelerating, this ensures
+        // the first decel time is always positive. Negative time makes no sense.
+        let t_a = t_a.abs();
+
         // Total duration of this segment
         let total_time = if v_lim_reached {
             h / v_max
