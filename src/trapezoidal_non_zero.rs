@@ -207,9 +207,9 @@ pub fn tp(t: f32, q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim, times: &mut Tim
     *times = Times {
         t_j1: 0.0,
         t_j2: 0.0,
-        t_d: 0.0,
+        t_d: segment.t_d,
         t_a: segment.t_a,
-        t_v: 0.0,
+        t_v: segment.total_time - segment.t_a - segment.t_d,
         total_time,
     };
 
