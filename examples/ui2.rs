@@ -278,6 +278,15 @@ fn build_ui(app: &gtk::Application) {
                 drawing_area.queue_draw();
                 times.queue_draw();
             });
+
+            // Reset to 0 on double click
+            what.connect_button_press_event(move |target, event| {
+                if event.button() == 1 && event.click_count() == Some(2) {
+                    target.set_value(0.0);
+                }
+
+                Inhibit(false)
+            })
         };
 
     let handle_bool_change =
