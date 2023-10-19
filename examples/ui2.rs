@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::error::Error;
 use std::rc::Rc;
 
-use gtk::prelude::*;
+use gtk::{gdk::EventMask, prelude::*};
 use plotters::prelude::*;
 use plotters::style::full_palette;
 use plotters_cairo::CairoBackend;
@@ -196,6 +196,7 @@ fn build_ui(app: &gtk::Application) {
     let window = builder.object::<gtk::Window>("MainWindow").unwrap();
 
     window.set_title("TP debugger");
+    window.set_events(window.events() | EventMask::POINTER_MOTION_MASK);
 
     let drawing_area: gtk::DrawingArea = builder.object("MainDrawingArea").unwrap();
 
@@ -236,6 +237,15 @@ fn build_ui(app: &gtk::Application) {
         let h = widget.allocated_height();
         let backend = CairoBackend::new(cr, (w as u32, h as u32)).unwrap();
         state.plot_pdf(backend).unwrap();
+        Inhibit(false)
+    });
+
+    // let state_cloned = app_state.clone();
+    drawing_area.set_events(drawing_area.events() | EventMask::POINTER_MOTION_MASK);
+    drawing_area.connect_motion_notify_event(move |_widget, _cr| {
+        // TODO: Find a way to get value from chart. This method is currently a noop but it was a
+        // bit challenging to get it working so I'll leave it in.
+
         Inhibit(false)
     });
 
