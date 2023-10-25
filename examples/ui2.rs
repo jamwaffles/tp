@@ -6,11 +6,10 @@ use gtk::{gdk::EventMask, prelude::*};
 use plotters::prelude::*;
 use plotters::style::full_palette;
 use plotters_cairo::CairoBackend;
-use tp::trapezoidal_non_zero::{tp, Lim, Times};
+use tp::trapezoidal_non_zero::{Lim, Segment, Times};
 
 const GLADE_UI_SOURCE: &'static str = include_str!("ui.glade");
 
-#[derive(Clone, Copy)]
 struct PlottingState {
     q0: f64,
     q1: f64,
@@ -23,6 +22,7 @@ struct PlottingState {
     show_vel: bool,
     show_acc: bool,
     show_jerk: bool,
+    seg: Segment,
 }
 
 impl PlottingState {
@@ -55,15 +55,7 @@ impl PlottingState {
 
         let min = -min.max(max);
 
-        let (total_time, _) = tp(
-            0.0,
-            self.q0 as f32,
-            self.q1 as f32,
-            self.v0 as f32,
-            self.v1 as f32,
-            &lim,
-            &mut Times::default(),
-        );
+        let Times { total_time, .. } = self.seg.times();
 
         let mut chart = ChartBuilder::on(&root)
             // .caption("y=x^2", ("sans-serif", 50).into_font())
@@ -81,15 +73,7 @@ impl PlottingState {
             (0..=(total_time * points) as u32).map(|t| {
                 let t = (t as f32) / points;
 
-                let (_, out) = tp(
-                    t,
-                    self.q0 as f32,
-                    self.q1 as f32,
-                    self.v0 as f32,
-                    self.v1 as f32,
-                    &lim,
-                    &mut Times::default(),
-                );
+                let out = self.seg.tp(t).unwrap_or_default();
 
                 (t, out.pos)
             }),
@@ -100,15 +84,7 @@ impl PlottingState {
             (0..=(total_time * points) as u32).map(|t| {
                 let t = (t as f32) / points;
 
-                let (_, out) = tp(
-                    t,
-                    self.q0 as f32,
-                    self.q1 as f32,
-                    self.v0 as f32,
-                    self.v1 as f32,
-                    &lim,
-                    &mut Times::default(),
-                );
+                let out = self.seg.tp(t).unwrap_or_default();
 
                 (t, out.vel)
             }),
@@ -119,15 +95,7 @@ impl PlottingState {
             (0..=(total_time * points) as u32).map(|t| {
                 let t = (t as f32) / points;
 
-                let (_, out) = tp(
-                    t,
-                    self.q0 as f32,
-                    self.q1 as f32,
-                    self.v0 as f32,
-                    self.v1 as f32,
-                    &lim,
-                    &mut Times::default(),
-                );
+                let out = self.seg.tp(t).unwrap_or_default();
 
                 (t, out.acc)
             }),
@@ -138,15 +106,7 @@ impl PlottingState {
             (0..=(total_time * points) as u32).map(|t| {
                 let t = (t as f32) / points;
 
-                let (_, out) = tp(
-                    t,
-                    self.q0 as f32,
-                    self.q1 as f32,
-                    self.v0 as f32,
-                    self.v1 as f32,
-                    &lim,
-                    &mut Times::default(),
-                );
+                let out = self.seg.tp(t).unwrap_or_default();
 
                 (t, out.jerk)
             }),
@@ -226,13 +186,24 @@ fn build_ui(app: &gtk::Application) {
         show_vel: show_vel.is_active(),
         show_acc: show_acc.is_active(),
         show_jerk: show_jerk.is_active(),
+        seg: Segment::new(
+            q0_scale.value() as f32,
+            q1_scale.value() as f32,
+            v0_scale.value() as f32,
+            v1_scale.value() as f32,
+            &Lim {
+                vel: lim_vel_scale.value() as f32,
+                acc: lim_acc_scale.value() as f32,
+                jerk: lim_jerk_scale.value() as f32,
+            },
+        ),
     }));
 
     window.set_application(Some(app));
 
     let state_cloned = app_state.clone();
     drawing_area.connect_draw(move |widget, cr| {
-        let state = state_cloned.borrow().clone();
+        let state = state_cloned.borrow();
         let w = widget.allocated_width();
         let h = widget.allocated_height();
         let backend = CairoBackend::new(cr, (w as u32, h as u32)).unwrap();
@@ -251,23 +222,9 @@ fn build_ui(app: &gtk::Application) {
 
     let state_cloned = app_state.clone();
     times.connect_draw(move |widget, _cr| {
-        let state = state_cloned.borrow().clone();
+        let app_state = state_cloned.borrow();
 
-        let mut times = Times::default();
-
-        let (_, _) = tp(
-            0.0,
-            state.q0 as f32,
-            state.q1 as f32,
-            state.v0 as f32,
-            state.v1 as f32,
-            &Lim {
-                vel: state.lim_vel as f32,
-                acc: state.lim_acc as f32,
-                jerk: state.lim_jerk as f32,
-            },
-            &mut times,
-        );
+        let times = app_state.seg.times();
 
         widget.set_text(&format!(
             "Total {:>5}, t_j1 {:>5}, t_a {:>5}, t_v {:>5}, t_j2 {:>5}, t_d {:>5}",
@@ -285,6 +242,19 @@ fn build_ui(app: &gtk::Application) {
             what.connect_value_changed(move |target| {
                 let mut state = app_state.borrow_mut();
                 *how(&mut *state) = target.value();
+
+                state.seg = Segment::new(
+                    state.q0 as f32,
+                    state.q1 as f32,
+                    state.v0 as f32,
+                    state.v1 as f32,
+                    &Lim {
+                        vel: state.lim_vel as f32,
+                        acc: state.lim_acc as f32,
+                        jerk: state.lim_jerk as f32,
+                    },
+                );
+
                 drawing_area.queue_draw();
                 times.queue_draw();
             });

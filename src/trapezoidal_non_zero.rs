@@ -71,17 +71,22 @@ pub struct Segment {
 }
 
 impl Segment {
-    fn new(q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim) -> Self {
-        // Correct signs for trajectories with negative positions at start and/or end
-        let mut lim = {
-            let sign = (q1 - q0).signum();
+    pub fn new(q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim) -> Self {
+        let sign = (q1 - q0).signum();
 
+        // Correct signs for trajectories with negative positions at start and/or end
+        let lim = {
             Lim {
-                vel: lim.vel * sign,
-                acc: lim.acc * sign,
-                jerk: lim.jerk * sign,
+                vel: sign * lim.vel,
+                acc: sign * lim.acc,
+                jerk: sign * lim.jerk,
             }
         };
+
+        let q0 = sign * q0;
+        let q1 = sign * q1;
+        let v0 = sign * v0;
+        let v1 = sign * v1;
 
         // FIXME: This, but allow acceleration at end of profile
         // // Assigned velocity (e.g. G0/G1 with feed rate, etc)
@@ -115,15 +120,17 @@ impl Segment {
             f32::sqrt(h * a_max + (v0.powi(2) + v1.powi(2)) / 2.0)
         };
 
+        dbg!(v_max, v_lim_reached, vlim);
+
         let t_a = (vlim - v0) / a_max;
         let t_d = (vlim - v1) / a_max;
 
-        // Don't allow trajectories with initial deceleration. For now this is handled by
-        // decelerating at the end of the previous segment.
-        // FIXME: This
-        if t_a < 0.0 {
-            return Self::default();
-        }
+        // // Don't allow trajectories with initial deceleration. For now this is handled by
+        // // decelerating at the end of the previous segment.
+        // // FIXME: This
+        // if t_a < 0.0 {
+        //     return Self::default();
+        // }
 
         // Total duration of this segment
         let total_time = if v_lim_reached {
@@ -160,7 +167,7 @@ impl Segment {
     }
 
     /// Get trajectory parameters at the given time `t`.
-    fn tp(&self, t: f32) -> Option<Out> {
+    pub fn tp(&self, t: f32) -> Option<Out> {
         let Self {
             q0,
             q1,
@@ -210,23 +217,17 @@ impl Segment {
             None
         }
     }
-}
 
-pub fn tp(t: f32, q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim, times: &mut Times) -> (f32, Out) {
-    let segment = Segment::new(q0, q1, v0, v1, &lim);
-
-    let total_time = segment.t;
-
-    *times = Times {
-        t_j1: 0.0,
-        t_j2: 0.0,
-        t_d: segment.t_d,
-        t_a: segment.t_a,
-        t_v: segment.total_time - segment.t_a - segment.t_d,
-        total_time,
-    };
-
-    (total_time, segment.tp(t).unwrap_or_default())
+    pub fn times(&self) -> Times {
+        Times {
+            t_j1: 0.0,
+            t_j2: 0.0,
+            t_d: self.t_d,
+            t_a: self.t_a,
+            t_v: 0.0,
+            total_time: self.total_time,
+        }
+    }
 }
 
 /// Returns a tuple of total trajectory time + segment properties at `t`.
