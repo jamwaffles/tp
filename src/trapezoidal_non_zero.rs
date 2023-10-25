@@ -66,20 +66,23 @@ pub struct Segment {
     /// Highest velocity reached in this segment.
     vlim: f32,
 
-    /// Limits provided by the user.
-    lim: Lim,
+    /// Sign of displacement.
+    sign: f32,
 }
 
 impl Segment {
     pub fn new(q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim) -> Self {
+        println!("---");
         let sign = (q1 - q0).signum();
 
         // Correct signs for trajectories with negative positions at start and/or end
         let lim = {
             Lim {
-                vel: sign * lim.vel,
-                acc: sign * lim.acc,
-                jerk: sign * lim.jerk,
+                // NOTE: This is verbatim out of the book, eq. 3.32. Probably a lot of room here for
+                // optimisation.
+                vel: { (sign + 1.0) / 2.0 * lim.vel + (sign - 1.0) / 2.0 * -lim.vel },
+                acc: { (sign + 1.0) / 2.0 * lim.acc + (sign - 1.0) / 2.0 * -lim.acc },
+                jerk: { (sign + 1.0) / 2.0 * lim.jerk + (sign - 1.0) / 2.0 * -lim.jerk },
             }
         };
 
@@ -103,6 +106,8 @@ impl Segment {
         // Displacement
         let h = q1 - q0;
 
+        dbg!(sign, q0, q1, a_max, v_max);
+
         // Was the given max velocity reached? If so, this segment will contain a cruise phase.
         let v_lim_reached = {
             let lhs = h * a_max;
@@ -120,17 +125,10 @@ impl Segment {
             f32::sqrt(h * a_max + (v0.powi(2) + v1.powi(2)) / 2.0)
         };
 
-        dbg!(v_max, v_lim_reached, vlim);
+        dbg!(v_lim_reached, h, a_max);
 
         let t_a = (vlim - v0) / a_max;
         let t_d = (vlim - v1) / a_max;
-
-        // // Don't allow trajectories with initial deceleration. For now this is handled by
-        // // decelerating at the end of the previous segment.
-        // // FIXME: This
-        // if t_a < 0.0 {
-        //     return Self::default();
-        // }
 
         // Total duration of this segment
         let total_time = if v_lim_reached {
@@ -152,7 +150,7 @@ impl Segment {
             t_a,
             t_d,
             vlim,
-            lim,
+            sign,
             total_time,
         }
     }
@@ -186,7 +184,7 @@ impl Segment {
         let t_delta = t - t0;
 
         // Accel (3.13a)
-        if t_delta < *t_a {
+        let out = if t_delta < *t_a {
             Some(Out {
                 pos: q0 + v0 * (t - t0) + (vlim - v0) / (2.0 * t_a) * (t - t0).powi(2),
                 vel: v0 + (vlim - v0) / t_a * (t - t0),
@@ -215,7 +213,14 @@ impl Segment {
         // Out of range
         else {
             None
-        }
+        };
+
+        out.map(|out| Out {
+            pos: out.pos * self.sign,
+            vel: out.vel * self.sign,
+            acc: out.acc * self.sign,
+            jerk: out.jerk * self.sign,
+        })
     }
 
     pub fn times(&self) -> Times {
