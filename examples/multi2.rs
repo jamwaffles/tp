@@ -6,11 +6,11 @@ use gtk::prelude::*;
 use plotters::prelude::*;
 use plotters::style::full_palette;
 use plotters_cairo::CairoBackend;
-use tp::trapezoidal_non_zero::{make_segments, tp_seg, Lim};
+use tp::trapezoidal_non_zero::{Lim, Segments};
 
 const GLADE_UI_SOURCE: &'static str = include_str!("multi2.glade");
 
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Debug, Default)]
 struct PlottingState {
     q0: f64,
     q1: f64,
@@ -24,6 +24,7 @@ struct PlottingState {
     show_acc: bool,
     show_jerk: bool,
     overlap_enabled: bool,
+    segs: Segments,
 }
 
 impl PlottingState {
@@ -41,9 +42,8 @@ impl PlottingState {
             jerk: self.lim_jerk as f32,
         };
 
-        let segments = make_segments(&lim, self.overlap_enabled);
-
-        let pos_lim = segments
+        let pos_lim = self
+            .segs
             .iter()
             .map(|seg| seg.final_pos().ceil() as u32)
             .max()
@@ -65,7 +65,7 @@ impl PlottingState {
 
         let min = -min.max(max);
 
-        let (total_time, _) = tp_seg(0.0, &segments);
+        let total_time = self.segs.total_time();
 
         let mut chart = ChartBuilder::on(&root)
             // .caption("y=x^2", ("sans-serif", 50).into_font())
@@ -79,57 +79,31 @@ impl PlottingState {
         // Number of X samples
         let points = 500.0;
 
-        let pos = LineSeries::new(
-            (0..=(total_time * points) as u32).map(|t| {
-                let t = (t as f32) / points;
+        let it = (0..=(total_time * points) as u32).map(|t| {
+            let t = (t as f32) / points;
 
-                let (_, out) = tp_seg(t, &segments);
+            let out = self.segs.tp(t).unwrap_or_default();
 
-                (t, out.pos)
-            }),
-            &full_palette::DEEPORANGE,
-        );
-
-        let vel = LineSeries::new(
-            (0..=(total_time * points) as u32).map(|t| {
-                let t = (t as f32) / points;
-
-                let (_, out) = tp_seg(t, &segments);
-
-                (t, out.vel)
-            }),
-            &full_palette::GREEN,
-        );
-
-        let acc = LineSeries::new(
-            (0..=(total_time * points) as u32).map(|t| {
-                let t = (t as f32) / points;
-
-                let (_, out) = tp_seg(t, &segments);
-
-                (t, out.acc)
-            }),
-            &full_palette::BLUE,
-        );
-
-        let jerk = LineSeries::new(
-            (0..=(total_time * points) as u32).map(|t| {
-                let t = (t as f32) / points;
-
-                let (_, out) = tp_seg(t, &segments);
-
-                (t, out.jerk)
-            }),
-            &full_palette::BROWN,
-        );
+            (t, out)
+        });
 
         if self.show_pos {
+            let pos = LineSeries::new(
+                it.clone().map(|(t, out)| (t, out.pos)),
+                &full_palette::DEEPORANGE,
+            );
+
             chart.draw_series(pos)?.label("Pos").legend(|(x, y)| {
                 Rectangle::new([(x, y + 1), (x + 8, y)], full_palette::DEEPORANGE)
             });
         }
 
         if self.show_vel {
+            let vel = LineSeries::new(
+                it.clone().map(|(t, out)| (t, out.vel)),
+                &full_palette::GREEN,
+            );
+
             chart
                 .draw_series(vel)?
                 .label("Vel")
@@ -137,6 +111,8 @@ impl PlottingState {
         }
 
         if self.show_acc {
+            let acc = LineSeries::new(it.clone().map(|(t, out)| (t, out.acc)), &full_palette::BLUE);
+
             chart
                 .draw_series(acc)?
                 .label("Acc")
@@ -144,6 +120,11 @@ impl PlottingState {
         }
 
         if self.show_jerk {
+            let jerk = LineSeries::new(
+                it.clone().map(|(t, out)| (t, out.jerk)),
+                &full_palette::BROWN,
+            );
+
             chart
                 .draw_series(jerk)?
                 .label("Jerk")
@@ -199,13 +180,24 @@ fn build_ui(app: &gtk::Application) {
         show_acc: show_acc.is_active(),
         show_jerk: show_jerk.is_active(),
         overlap_enabled: overlap_enabled.is_active(),
+        segs: Segments::new(
+            // q0_scale.value() as f32,
+            // q1_scale.value() as f32,
+            // v0_scale.value() as f32,
+            // v1_scale.value() as f32,
+            // &Lim {
+            //     vel: lim_vel_scale.value() as f32,
+            //     acc: lim_acc_scale.value() as f32,
+            //     jerk: lim_jerk_scale.value() as f32,
+            // },
+        ),
     }));
 
     window.set_application(Some(app));
 
     let state_cloned = app_state.clone();
     drawing_area.connect_draw(move |widget, cr| {
-        let state = state_cloned.borrow().clone();
+        let state = state_cloned.borrow();
         let w = widget.allocated_width();
         let h = widget.allocated_height();
         let backend = CairoBackend::new(cr, (w as u32, h as u32)).expect("Cairo no");
@@ -215,15 +207,9 @@ fn build_ui(app: &gtk::Application) {
 
     let state_cloned = app_state.clone();
     times.connect_draw(move |widget, _cr| {
-        let state = state_cloned.borrow().clone();
+        let state = state_cloned.borrow();
 
-        let lim = Lim {
-            vel: state.lim_vel as f32,
-            acc: state.lim_acc as f32,
-            jerk: state.lim_jerk as f32,
-        };
-
-        let (total_time, _) = tp_seg(0.0, &make_segments(&lim, state.overlap_enabled));
+        let total_time = state.segs.total_time();
 
         widget.set_text(&format!("Total {:>5}", total_time));
 
