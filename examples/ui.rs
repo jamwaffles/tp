@@ -46,7 +46,14 @@ impl PlottingState {
             .max(lim.jerk)
             .max(self.q0.abs() as f32)
             .max(self.q1.abs() as f32);
-        let min = -max;
+        let min = lim
+            .vel
+            .min(lim.acc)
+            .min(lim.jerk)
+            .min(self.q0.abs() as f32)
+            .min(self.q1.abs() as f32);
+
+        let min = -min.max(max);
 
         let (total_time, _) = tp(
             0.0,
@@ -65,11 +72,14 @@ impl PlottingState {
             .y_label_area_size(30)
             .build_cartesian_2d(0.0f32..total_time, (min - 0.2)..(max + 0.2))?;
 
-        chart.configure_mesh().disable_mesh().draw()?;
+        chart.configure_mesh().max_light_lines(0).draw()?;
+
+        // Number of X samples
+        let points = 500.0;
 
         let pos = LineSeries::new(
-            (0..=(total_time * 100.0) as u32).map(|t| {
-                let t = (t as f32) / 100.0;
+            (0..=(total_time * points) as u32).map(|t| {
+                let t = (t as f32) / points;
 
                 let (_, out) = tp(
                     t,
@@ -87,8 +97,8 @@ impl PlottingState {
         );
 
         let vel = LineSeries::new(
-            (0..=(total_time * 100.0) as u32).map(|t| {
-                let t = (t as f32) / 100.0;
+            (0..=(total_time * points) as u32).map(|t| {
+                let t = (t as f32) / points;
 
                 let (_, out) = tp(
                     t,
@@ -106,8 +116,8 @@ impl PlottingState {
         );
 
         let acc = LineSeries::new(
-            (0..=(total_time * 100.0) as u32).map(|t| {
-                let t = (t as f32) / 100.0;
+            (0..=(total_time * points) as u32).map(|t| {
+                let t = (t as f32) / points;
 
                 let (_, out) = tp(
                     t,
@@ -262,12 +272,22 @@ fn build_ui(app: &gtk::Application) {
             let app_state = app_state.clone();
             let drawing_area = drawing_area.clone();
             let times = times.clone();
+
             what.connect_value_changed(move |target| {
                 let mut state = app_state.borrow_mut();
                 *how(&mut *state) = target.value();
                 drawing_area.queue_draw();
                 times.queue_draw();
             });
+
+            // Reset to 0 on double click
+            what.connect_button_press_event(move |target, event| {
+                if event.button() == 1 && event.click_count() == Some(2) {
+                    target.set_value(0.0);
+                }
+
+                Inhibit(false)
+            })
         };
 
     let handle_bool_change =
