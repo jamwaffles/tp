@@ -245,6 +245,28 @@ impl Segments {
         Self::default()
     }
 
+    fn add_segment(&mut self, segment: Segment) {
+        // If overlap is disabled, just push the segment. This would be the "complete stop" mode.
+
+        // If overlap is enabled
+
+        // If next segment has a lower velocity than current vlim, set previous v1 to this lower
+        // velocity and recompute.
+
+        // Note: Newly pushed segment has v0 = vlim, v1 = 0
+
+        // TODO: What happens if all the durations are too short?
+
+        // Else if segment has higher velocity, set previous v1 to previous vlim (so no prev decel), and
+        // set current segment v0 to prev v1, with vlim as whatever velocity it wants.
+
+        // Else
+
+        // No accel or decel. Ensure curr v1 / next v0 is correct
+
+        todo!()
+    }
+
     pub fn total_time(&self) -> f32 {
         todo!()
     }
