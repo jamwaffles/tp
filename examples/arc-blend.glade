@@ -78,10 +78,13 @@
         </child>
         <child>
           <object class="GtkDrawingArea" id="MainDrawingArea">
-            <property name="width-request">600</property>
-            <property name="height-request">600</property>
+            <property name="width-request">800</property>
+            <property name="height-request">800</property>
             <property name="visible">True</property>
             <property name="can-focus">False</property>
+            <style>
+              <class name="bg-white"/>
+            </style>
           </object>
           <packing>
             <property name="expand">True</property>

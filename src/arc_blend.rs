@@ -69,9 +69,9 @@ impl ArcBlend {
             let x_i = (mid - deviation_limit_max_radius * prev_delta - arc_center).normalize();
 
             // TODO: Might not need this
-            // x_i * arc_radius
+            x_i * arc_radius
 
-            x_i
+            // x_i
         };
 
         dbg!(

@@ -24,36 +24,65 @@ impl PlottingState {
 
         root.fill(&WHITE)?;
 
-        let p1 = Coord2::new(0.5, 0.5);
-        let p2 = Coord2::new(0.8, 0.8);
-        let p3 = Coord2::new(1.2, 0.6);
+        let margin = 50;
+
+        let root = root.margin(margin, margin, margin, margin);
+
+        // let p1 = Coord2::new(0.5, 0.5);
+        // let p2 = Coord2::new(0.8, 0.8);
+        // let p3 = Coord2::new(1.2, 0.6);
+
+        // Right angle
+        let p1 = Coord2::new(0.0, 10.0);
+        let p2 = Coord2::new(0.0, 0.0);
+        let p3 = Coord2::new(10.0, 0.0);
 
         let blend = ArcBlend::new(p1, p2, p3, self.deviation_limit as f32);
 
         let x_range = p1.x.min(p2.x).min(p3.x)..p1.x.max(p2.x).max(p3.x);
         let y_range = p1.y.min(p2.y).min(p3.y)..p1.y.max(p2.y).max(p3.y);
 
-        let mut chart = ChartBuilder::on(&root)
-            .margin(50)
-            .build_cartesian_2d(x_range, y_range)?;
+        let mut chart = ChartBuilder::on(&root).build_cartesian_2d(x_range, y_range)?;
 
         chart.draw_series(LineSeries::new(
-            vec![(p1.x, p1.y), (p2.x, p2.y), (p3.x, p3.y)],
+            vec![
+                (p1.x, p1.y),
+                (p2.x, p2.y),
+                (p3.x, p3.y),
+                (blend.arc_center.x, blend.arc_center.y),
+            ],
             &full_palette::DEEPORANGE,
         ))?;
 
-        let center = chart.backend_coord(&(blend.arc_center.x, blend.arc_center.y));
+        let (arc_radius, _) = chart.backend_coord(&(blend.arc_radius, 0.0));
+        let arc_radius = arc_radius - margin;
 
-        let scale = center.0 as f32 / blend.arc_center.x;
+        chart.plotting_area().draw(&Circle::new(
+            (p1.x, p1.y),
+            3,
+            Into::<ShapeStyle>::into(&full_palette::GREY).filled(),
+        ))?;
+        chart.plotting_area().draw(&Circle::new(
+            (p2.x, p2.y),
+            3,
+            Into::<ShapeStyle>::into(&full_palette::GREY).filled(),
+        ))?;
+        chart.plotting_area().draw(&Circle::new(
+            (p3.x, p3.y),
+            3,
+            Into::<ShapeStyle>::into(&full_palette::GREY).filled(),
+        ))?;
 
-        let arc_size = blend.arc_radius * scale;
+        chart.plotting_area().draw(&Circle::new(
+            (blend.arc_center.x, blend.arc_center.y),
+            3,
+            Into::<ShapeStyle>::into(&full_palette::BLACK).filled(),
+        ))?;
 
-        dbg!(arc_size);
-
-        root.draw(&Circle::new(
-            center,
-            arc_size,
-            Into::<ShapeStyle>::into(&full_palette::DEEPORANGE).filled(),
+        chart.plotting_area().draw(&Circle::new(
+            (blend.arc_center.x, blend.arc_center.y),
+            arc_radius,
+            Into::<ShapeStyle>::into(&full_palette::BLUE),
         ))?;
 
         root.present()?;
@@ -82,9 +111,10 @@ fn build_ui(app: &gtk::Application) {
     let state_cloned = app_state.clone();
     drawing_area.connect_draw(move |widget, cr| {
         let state = state_cloned.borrow();
-        let w = widget.allocated_width();
-        let h = widget.allocated_height();
-        let backend = CairoBackend::new(cr, (w as u32, h as u32)).expect("Cairo no");
+        let w = widget.allocated_width() as u32;
+        let h = widget.allocated_height() as u32;
+
+        let backend = CairoBackend::new(cr, (w.min(h), w.min(h))).expect("Cairo no");
         state.plot_pdf(backend).expect("Bad plot");
         Inhibit(false)
     });
