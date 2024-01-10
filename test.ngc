@@ -1,0 +1,12 @@
+G21
+
+g0 x0y0
+
+
+; make a square
+g0 y100
+g0 x100
+g0 y0
+g0 x0
+
+m2
