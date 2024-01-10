@@ -17,7 +17,7 @@ pub struct ArcBlend {
     pub arc_start: Coord2,
     pub arc_center: Coord2,
     pub arc_radius: f32,
-    // arc_end: Coord2,
+    pub arc_end: Coord2,
     // deviation: f32,
 }
 
@@ -67,6 +67,12 @@ impl ArcBlend {
             arc_center + (x_i * arc_radius)
         };
 
+        let end_point = {
+            let x_i = (mid + radius_limit * next_delta_norm - arc_center).normalize();
+
+            arc_center + (x_i * arc_radius)
+        };
+
         Self {
             prev,
             mid,
@@ -74,6 +80,7 @@ impl ArcBlend {
             max_deviation,
             arc_center,
             arc_start: Coord2::new(start_point.x, start_point.y),
+            arc_end: Coord2::new(end_point.x, end_point.y),
             arc_radius,
         }
     }

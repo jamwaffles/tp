@@ -8,6 +8,11 @@
     <property name="step-increment">0.01</property>
     <property name="page-increment">10</property>
   </object>
+  <object class="GtkAdjustment" id="StartXAdjust">
+    <property name="upper">10</property>
+    <property name="step-increment">0.10</property>
+    <property name="page-increment">10</property>
+  </object>
   <object class="GtkWindow" id="MainWindow">
     <property name="can-focus">False</property>
     <property name="default-width">1000</property>
@@ -17,13 +22,13 @@
         <property name="can-focus">False</property>
         <property name="orientation">vertical</property>
         <child>
-          <!-- n-columns=2 n-rows=2 -->
+          <!-- n-columns=2 n-rows=3 -->
           <object class="GtkGrid">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
             <property name="margin-start">5</property>
             <property name="margin-end">5</property>
-            <property name="margin-top">5</property>
+            <property name="margin-top">4</property>
             <property name="margin-bottom">5</property>
             <property name="row-homogeneous">True</property>
             <property name="column-homogeneous">True</property>
@@ -65,8 +70,33 @@
               </object>
               <packing>
                 <property name="left-attach">0</property>
-                <property name="top-attach">1</property>
+                <property name="top-attach">2</property>
                 <property name="width">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="label" translatable="yes">Start X</property>
+              </object>
+              <packing>
+                <property name="left-attach">0</property>
+                <property name="top-attach">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkScale" id="StartX">
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="adjustment">StartXAdjust</property>
+                <property name="round-digits">2</property>
+                <property name="digits">2</property>
+                <property name="value-pos">left</property>
+              </object>
+              <packing>
+                <property name="left-attach">1</property>
+                <property name="top-attach">1</property>
               </packing>
             </child>
           </object>

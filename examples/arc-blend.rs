@@ -13,6 +13,7 @@ const GLADE_UI_SOURCE: &'static str = include_str!("arc-blend.glade");
 #[derive(Debug, Default)]
 struct PlottingState {
     deviation_limit: f64,
+    start_x: f64,
 }
 
 impl PlottingState {
@@ -33,7 +34,7 @@ impl PlottingState {
         // let p3 = Coord2::new(1.2, 0.6);
 
         // Right angle
-        let p1 = Coord2::new(0.0, 5.0);
+        let p1 = Coord2::new(self.start_x as f32, 5.0);
         let p2 = Coord2::new(0.0, 0.0);
         let p3 = Coord2::new(7.0, 0.0);
 
@@ -95,6 +96,12 @@ impl PlottingState {
             Into::<ShapeStyle>::into(&full_palette::GREEN_500),
         ))?;
 
+        chart.plotting_area().draw(&Circle::new(
+            (blend.arc_end.x, blend.arc_end.y),
+            3,
+            Into::<ShapeStyle>::into(&full_palette::RED_500),
+        ))?;
+
         root.present()?;
 
         Ok(())
@@ -111,9 +118,11 @@ fn build_ui(app: &gtk::Application) {
 
     let stats = builder.object::<gtk::Label>("Stats").unwrap();
     let deviation_limit_scale = builder.object::<gtk::Scale>("DeviationLimit").unwrap();
+    let start_x_scale = builder.object::<gtk::Scale>("StartX").unwrap();
 
     let app_state = Rc::new(RefCell::new(PlottingState {
         deviation_limit: deviation_limit_scale.value(),
+        start_x: start_x_scale.value(),
     }));
 
     window.set_application(Some(app));
@@ -165,6 +174,7 @@ fn build_ui(app: &gtk::Application) {
         };
 
     handle_change(&deviation_limit_scale, Box::new(|s| &mut s.deviation_limit));
+    handle_change(&start_x_scale, Box::new(|s| &mut s.start_x));
 
     window.show_all();
 }
