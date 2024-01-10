@@ -3,26 +3,27 @@
 
 use nalgebra::{Point2, Vector2};
 
-type Coord2 = Point2<f32>;
+pub type Coord2 = Point2<f32>;
 
 pub struct LinearSegment {
     start: Coord2,
     end: Coord2,
 }
 
-pub struct CircularBlend {
-    prev: Coord2,
-    mid: Coord2,
-    next: Coord2,
-    max_deviation: f32,
+pub struct ArcBlend {
+    pub prev: Coord2,
+    pub mid: Coord2,
+    pub next: Coord2,
+    pub max_deviation: f32,
 
-    arc_start: Coord2,
-    arc_end: Coord2,
-    arc_center: Coord2,
-    deviation: f32,
+    pub arc_start: Coord2,
+    pub arc_center: Coord2,
+    pub arc_radius: f32,
+    // arc_end: Coord2,
+    // deviation: f32,
 }
 
-impl CircularBlend {
+impl ArcBlend {
     pub fn new(prev: Coord2, mid: Coord2, next: Coord2, max_deviation: f32) -> Self {
         // Yi
         let prev_delta: Vector2<f32> = (mid - prev).normalize();
@@ -83,15 +84,17 @@ impl CircularBlend {
             start_point,
         );
 
-        todo!()
+        // todo!()
 
-        // Self {
-        //     prev,
-        //     mid,
-        //     next,
-        //     max_deviation,
-        //     arc_center,
-        // }
+        Self {
+            prev,
+            mid,
+            next,
+            max_deviation,
+            arc_center,
+            arc_start: Coord2::new(start_point.x, start_point.y),
+            arc_radius,
+        }
     }
 }
 
@@ -105,7 +108,7 @@ mod tests {
         let p2 = Coord2::new(2.0, 0.0);
         let p3 = Coord2::new(5.0, 0.0);
 
-        CircularBlend::new(p1, p2, p3, 0.1);
+        ArcBlend::new(p1, p2, p3, 0.1);
     }
 
     #[test]
@@ -114,7 +117,7 @@ mod tests {
         let p2 = Coord2::new(0.0, 0.0);
         let p3 = Coord2::new(10.0, 0.0);
 
-        CircularBlend::new(p1, p2, p3, 0.1);
+        ArcBlend::new(p1, p2, p3, 0.1);
     }
 
     #[test]
@@ -123,6 +126,6 @@ mod tests {
         let p2 = Coord2::new(0.0, 10.0);
         let p3 = Coord2::new(10.0, 10.0);
 
-        CircularBlend::new(p1, p2, p3, f32::INFINITY);
+        ArcBlend::new(p1, p2, p3, f32::INFINITY);
     }
 }
