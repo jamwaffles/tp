@@ -89,6 +89,12 @@ impl PlottingState {
             Into::<ShapeStyle>::into(&full_palette::BLUE),
         ))?;
 
+        chart.plotting_area().draw(&Circle::new(
+            (blend.arc_start.x, blend.arc_start.y),
+            3,
+            Into::<ShapeStyle>::into(&full_palette::GREEN_500),
+        ))?;
+
         root.present()?;
 
         Ok(())

@@ -59,12 +59,12 @@ impl ArcBlend {
         let arc_center: nalgebra::OPoint<f32, nalgebra::Const<2>> =
             mid + (next_delta_norm - prev_delta_norm).normalize() * (arc_radius / half_angle.cos());
 
-        // TODO: This is possibly completely wrong lol
+        // Xi
         let start_point = {
             // Xi: Vector pointing from arc center to start point
-            let x_i = (mid - deviation_limit_max_radius * prev_delta_norm - arc_center).normalize();
+            let x_i = (mid - radius_limit * prev_delta_norm - arc_center).normalize();
 
-            x_i * arc_radius
+            arc_center + (x_i * arc_radius)
         };
 
         Self {
