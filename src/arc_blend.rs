@@ -1,15 +1,13 @@
 //! Based on the paper "Time-Optimal Trajectory Generation for Path Following with Bounded
 //! Acceleration and Velocity", Kunz and Stilman.
 
+use std::f32::consts::PI;
+
 use nalgebra::{Point2, Vector2};
 
 pub type Coord2 = Point2<f32>;
 
-pub struct LinearSegment {
-    start: Coord2,
-    end: Coord2,
-}
-
+#[derive(Debug, Copy, Clone)]
 pub struct ArcBlend {
     pub prev: Coord2,
     pub mid: Coord2,
@@ -25,10 +23,15 @@ pub struct ArcBlend {
 
 impl ArcBlend {
     pub fn new(prev: Coord2, mid: Coord2, next: Coord2, max_deviation: f32) -> Self {
+        // Qi
+        let prev_delta: Vector2<f32> = mid - prev;
+        // Qi+1
+        let next_delta: Vector2<f32> = next - mid;
+
         // Yi
-        let prev_delta: Vector2<f32> = (mid - prev).normalize();
+        let prev_delta_norm: Vector2<f32> = prev_delta.normalize();
         // Yi+1
-        let next_delta: Vector2<f32> = (next - mid).normalize();
+        let next_delta_norm: Vector2<f32> = next_delta.normalize();
 
         // Lengths of both line segments
         let prev_len = prev_delta.norm();
@@ -36,13 +39,6 @@ impl ArcBlend {
 
         // ⍺i: Outside angle between segments in radians
         let outside_angle = prev_delta.angle(&next_delta);
-
-        // TODO: Remove this when more tests are added and this still passes. Using non-normalised
-        // lengths should be more accurate I think?
-        assert_eq!(
-            outside_angle,
-            prev_delta.normalize().angle(&next_delta.normalize())
-        );
 
         let half_angle = outside_angle / 2.0;
 
@@ -61,30 +57,15 @@ impl ArcBlend {
 
         // Ci
         let arc_center: nalgebra::OPoint<f32, nalgebra::Const<2>> =
-            mid + (next_delta - prev_delta).normalize() * (arc_radius / half_angle.cos());
+            mid + (next_delta_norm - prev_delta_norm).normalize() * (arc_radius / half_angle.cos());
 
         // TODO: This is possibly completely wrong lol
         let start_point = {
             // Xi: Vector pointing from arc center to start point
-            let x_i = (mid - deviation_limit_max_radius * prev_delta - arc_center).normalize();
+            let x_i = (mid - deviation_limit_max_radius * prev_delta_norm - arc_center).normalize();
 
-            // TODO: Might not need this
             x_i * arc_radius
-
-            // x_i
         };
-
-        dbg!(
-            prev_len,
-            next_len,
-            outside_angle,
-            radius_limit,
-            arc_radius,
-            arc_center,
-            start_point,
-        );
-
-        // todo!()
 
         Self {
             prev,

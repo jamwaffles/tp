@@ -33,23 +33,27 @@ impl PlottingState {
         // let p3 = Coord2::new(1.2, 0.6);
 
         // Right angle
-        let p1 = Coord2::new(0.0, 10.0);
+        let p1 = Coord2::new(0.0, 5.0);
         let p2 = Coord2::new(0.0, 0.0);
-        let p3 = Coord2::new(10.0, 0.0);
+        let p3 = Coord2::new(7.0, 0.0);
 
         let blend = ArcBlend::new(p1, p2, p3, self.deviation_limit as f32);
 
-        let x_range = p1.x.min(p2.x).min(p3.x)..p1.x.max(p2.x).max(p3.x);
-        let y_range = p1.y.min(p2.y).min(p3.y)..p1.y.max(p2.y).max(p3.y);
+        // let x_range = p1.x.min(p2.x).min(p3.x)..p1.x.max(p2.x).max(p3.x);
+        // let y_range = p1.y.min(p2.y).min(p3.y)..p1.y.max(p2.y).max(p3.y);
 
-        let mut chart = ChartBuilder::on(&root).build_cartesian_2d(x_range, y_range)?;
+        // Chart must be square to get circle in the right position
+        let range = p1.y.min(p2.y).min(p3.y).min(p1.x).min(p2.x).min(p3.x)
+            ..p1.y.max(p2.y).max(p3.y).max(p1.x).max(p2.x).max(p3.x);
+
+        let mut chart = ChartBuilder::on(&root).build_cartesian_2d(range.clone(), range)?;
 
         chart.draw_series(LineSeries::new(
             vec![
                 (p1.x, p1.y),
                 (p2.x, p2.y),
                 (p3.x, p3.y),
-                (blend.arc_center.x, blend.arc_center.y),
+                // (blend.arc_center.x, blend.arc_center.y),
             ],
             &full_palette::DEEPORANGE,
         ))?;
