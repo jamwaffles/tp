@@ -1,7 +1,8 @@
+use kiss3d::ncollide3d;
 use kiss3d::renderer::{LineRenderer, Renderer};
 use kiss3d::window::Window;
 use kiss3d::{camera::ArcBall, light::Light};
-use nalgebra::{Point3, UnitQuaternion, Vector3};
+use nalgebra::{Point3, Translation3, UnitQuaternion, Vector3};
 use std::f32::consts::PI;
 
 fn main() {
@@ -19,6 +20,14 @@ fn main() {
     let mut floor = window.add_quad(7.0, 7.0, 1, 1);
     floor.set_color(0.2, 0.2, 0.2);
     floor.append_rotation_wrt_center(&align_z_up);
+
+    let circle = ncollide3d::procedural::cylinder(0.4f32, 0.4f32, 32);
+    let mut c = window.add_trimesh(circle, Vector3::from_element(1.0));
+    c.set_points_size(10.0);
+    c.set_lines_width(1.0);
+    c.set_surface_rendering_activation(false);
+    c.append_translation(&Translation3::new(-1.0, 0.0, 0.0));
+    c.set_color(0.0, 0.0, 1.0);
 
     window.set_light(Light::StickToCamera);
 
