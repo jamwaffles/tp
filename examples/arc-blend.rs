@@ -142,7 +142,7 @@ fn build_ui(app: &gtk::Application) {
     stats.connect_draw(move |widget, _cr| {
         let state = state_cloned.borrow();
 
-        widget.set_text(&format!("Deviation limit {:}", state.deviation_limit));
+        widget.set_text(&format!("Deviation limit {}", state.deviation_limit));
 
         Inhibit(false)
     });

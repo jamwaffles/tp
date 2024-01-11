@@ -18,6 +18,7 @@ pub struct ArcBlend {
     pub arc_center: Coord2,
     pub arc_radius: f32,
     pub arc_end: Coord2,
+    pub arc_len: f32,
     // deviation: f32,
 }
 
@@ -73,6 +74,9 @@ impl ArcBlend {
             arc_center + (x_i * arc_radius)
         };
 
+        // s: Length of arc
+        let arc_len = outside_angle * arc_radius;
+
         Self {
             prev,
             mid,
@@ -82,6 +86,7 @@ impl ArcBlend {
             arc_start: Coord2::new(start_point.x, start_point.y),
             arc_end: Coord2::new(end_point.x, end_point.y),
             arc_radius,
+            arc_len,
         }
     }
 }
