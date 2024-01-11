@@ -1,5 +1,9 @@
 //! Based on the paper "Time-Optimal Trajectory Generation for Path Following with Bounded
 //! Acceleration and Velocity", Kunz and Stilman.
+//!
+//! Problems with circular blends:
+//!
+//! - Start and end points have discontinuous acceleration.
 
 use std::f32::consts::PI;
 
