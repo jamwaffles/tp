@@ -19,6 +19,7 @@ pub struct ArcBlend {
     pub arc_radius: f32,
     pub arc_end: Coord2,
     pub arc_len: f32,
+    pub velocity_limit: f32,
     // deviation: f32,
 }
 
@@ -77,6 +78,16 @@ impl ArcBlend {
         // s: Length of arc
         let arc_len = outside_angle * arc_radius;
 
+        // TODO: Configurable from global trajectory limits
+        // TODO: This would be the smaller of the 3 axis acceleration limits
+        // TODO: Need to take into account arc rotation
+        let accel_limit = 5.0;
+
+        // For a trajectory, this will be the min of this value, and the global velocity limit
+        let velocity_limit = f32::sqrt(arc_radius * accel_limit);
+
+        dbg!(velocity_limit);
+
         Self {
             prev,
             mid,
@@ -87,6 +98,7 @@ impl ArcBlend {
             arc_end: Coord2::new(end_point.x, end_point.y),
             arc_radius,
             arc_len,
+            velocity_limit,
         }
     }
 }
