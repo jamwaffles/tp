@@ -24,7 +24,7 @@ pub struct ArcBlend {
     pub arc_end: Coord2,
     pub arc_len: f32,
     pub velocity_limit: f32,
-    // deviation: f32,
+    pub time: f32, // deviation: f32,
 }
 
 impl ArcBlend {
@@ -103,6 +103,7 @@ impl ArcBlend {
             arc_radius,
             arc_len,
             velocity_limit,
+            time: velocity_limit * arc_len,
         }
     }
 }
