@@ -6,7 +6,7 @@ use gtk::prelude::*;
 use plotters::prelude::*;
 use plotters::style::full_palette;
 use plotters_cairo::CairoBackend;
-use tp::arc_blend::{ArcBlend, Coord2};
+use tp::arc_blend::{ArcBlend, Coord3};
 
 const GLADE_UI_SOURCE: &'static str = include_str!("arc-blend.glade");
 
@@ -29,14 +29,14 @@ impl PlottingState {
 
         let root = root.margin(margin, margin, margin, margin);
 
-        // let p1 = Coord2::new(0.5, 0.5);
-        // let p2 = Coord2::new(0.8, 0.8);
-        // let p3 = Coord2::new(1.2, 0.6);
+        // let p1 = Coord3::new(0.5, 0.5);
+        // let p2 = Coord3::new(0.8, 0.8);
+        // let p3 = Coord3::new(1.2, 0.6);
 
         // Right angle
-        let p1 = Coord2::new(self.start_x as f32, 5.0);
-        let p2 = Coord2::new(0.0, 0.0);
-        let p3 = Coord2::new(7.0, 0.0);
+        let p1 = Coord3::new(self.start_x as f32, 5.0, 0.0);
+        let p2 = Coord3::new(0.0, 0.0, 0.0);
+        let p3 = Coord3::new(7.0, 0.0, 0.0);
 
         let blend = ArcBlend::new(p1, p2, p3, self.deviation_limit as f32);
 

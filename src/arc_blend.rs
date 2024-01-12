@@ -5,39 +5,37 @@
 //!
 //! - Start and end points have discontinuous acceleration.
 
-use std::f32::consts::PI;
+use nalgebra::Vector3;
 
-use nalgebra::{Point2, Vector2};
-
-pub type Coord2 = Point2<f32>;
+pub type Coord3 = Vector3<f32>;
 
 #[derive(Debug, Copy, Clone)]
 pub struct ArcBlend {
-    pub prev: Coord2,
-    pub mid: Coord2,
-    pub next: Coord2,
+    pub prev: Coord3,
+    pub mid: Coord3,
+    pub next: Coord3,
     pub max_deviation: f32,
 
-    pub arc_start: Coord2,
-    pub arc_center: Coord2,
+    pub arc_start: Coord3,
+    pub arc_center: Coord3,
     pub arc_radius: f32,
-    pub arc_end: Coord2,
+    pub arc_end: Coord3,
     pub arc_len: f32,
     pub velocity_limit: f32,
     pub time: f32, // deviation: f32,
 }
 
 impl ArcBlend {
-    pub fn new(prev: Coord2, mid: Coord2, next: Coord2, max_deviation: f32) -> Self {
+    pub fn new(prev: Coord3, mid: Coord3, next: Coord3, max_deviation: f32) -> Self {
         // Qi
-        let prev_delta: Vector2<f32> = mid - prev;
+        let prev_delta: Vector3<f32> = mid - prev;
         // Qi+1
-        let next_delta: Vector2<f32> = next - mid;
+        let next_delta: Vector3<f32> = next - mid;
 
         // Yi
-        let prev_delta_norm: Vector2<f32> = prev_delta.normalize();
+        let prev_delta_norm: Vector3<f32> = prev_delta.normalize();
         // Yi+1
-        let next_delta_norm: Vector2<f32> = next_delta.normalize();
+        let next_delta_norm: Vector3<f32> = next_delta.normalize();
 
         // Lengths of both line segments
         let prev_len = prev_delta.norm();
@@ -62,7 +60,7 @@ impl ArcBlend {
         let arc_radius = radius_limit / half_angle.tan();
 
         // Ci
-        let arc_center: nalgebra::OPoint<f32, nalgebra::Const<2>> =
+        let arc_center =
             mid + (next_delta_norm - prev_delta_norm).normalize() * (arc_radius / half_angle.cos());
 
         // Xi
@@ -98,8 +96,8 @@ impl ArcBlend {
             next,
             max_deviation,
             arc_center,
-            arc_start: Coord2::new(start_point.x, start_point.y),
-            arc_end: Coord2::new(end_point.x, end_point.y),
+            arc_start: Coord3::new(start_point.x, start_point.y, start_point.z),
+            arc_end: Coord3::new(end_point.x, end_point.y, start_point.z),
             arc_radius,
             arc_len,
             velocity_limit,
@@ -114,27 +112,27 @@ mod tests {
 
     #[test]
     fn colinear() {
-        let p1 = Coord2::new(0.0, 0.0);
-        let p2 = Coord2::new(2.0, 0.0);
-        let p3 = Coord2::new(5.0, 0.0);
+        let p1 = Coord3::new(0.0, 0.0, 0.0);
+        let p2 = Coord3::new(2.0, 0.0, 0.0);
+        let p3 = Coord3::new(5.0, 0.0, 0.0);
 
         ArcBlend::new(p1, p2, p3, 0.1);
     }
 
     #[test]
     fn right_angle_with_limit() {
-        let p1 = Coord2::new(0.0, 10.0);
-        let p2 = Coord2::new(0.0, 0.0);
-        let p3 = Coord2::new(10.0, 0.0);
+        let p1 = Coord3::new(0.0, 10.0, 0.0);
+        let p2 = Coord3::new(0.0, 0.0, 0.0);
+        let p3 = Coord3::new(10.0, 0.0, 0.0);
 
         ArcBlend::new(p1, p2, p3, 0.1);
     }
 
     #[test]
     fn right_angle_no_limit() {
-        let p1 = Coord2::new(0.0, 0.0);
-        let p2 = Coord2::new(0.0, 10.0);
-        let p3 = Coord2::new(10.0, 10.0);
+        let p1 = Coord3::new(0.0, 0.0, 0.0);
+        let p2 = Coord3::new(0.0, 10.0, 0.0);
+        let p3 = Coord3::new(10.0, 10.0, 0.0);
 
         ArcBlend::new(p1, p2, p3, f32::INFINITY);
     }
