@@ -152,11 +152,6 @@ impl Segment {
         self.q1
     }
 
-    /// Whether the given `t` is within this segment or not.
-    fn contains(&self, t: f32) -> bool {
-        t >= self.start_t && t < (self.start_t + self.total_time)
-    }
-
     /// Get trajectory parameters at the given time `t`.
     pub fn tp(&self, t: f32) -> Option<Out> {
         let Self {

@@ -1,6 +1,5 @@
 //! Trapezoidal trajectory with non-zero initial velocity.
 
-use kiss3d::loader::obj::Coord;
 use nalgebra::Vector3;
 
 pub type Coord3 = Vector3<f32>;
@@ -67,14 +66,6 @@ pub struct Segment {
 
     /// Sign of displacement.
     sign: Coord3,
-}
-
-fn square(input: Coord3) -> Coord3 {
-    input.map(|i| i.powi(2))
-}
-
-fn sqrt(input: Coord3) -> Coord3 {
-    input.map(|i| i.sqrt())
 }
 
 impl Segment {
