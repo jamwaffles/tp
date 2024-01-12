@@ -37,19 +37,16 @@ impl PlottingState {
         let lim = Lim {
             vel: self.lim_vel as f32,
             acc: self.lim_acc as f32,
-            jerk: self.lim_jerk as f32,
         };
 
         let max = lim
             .vel
             .max(lim.acc)
-            .max(lim.jerk)
             .max(self.q0.abs() as f32)
             .max(self.q1.abs() as f32);
         let min = lim
             .vel
             .min(lim.acc)
-            .min(lim.jerk)
             .min(self.q0.abs() as f32)
             .min(self.q1.abs() as f32);
 
@@ -102,17 +99,6 @@ impl PlottingState {
             &full_palette::BLUE,
         );
 
-        let jerk = LineSeries::new(
-            (0..=(total_time * points) as u32).map(|t| {
-                let t = (t as f32) / points;
-
-                let out = self.seg.tp(t).unwrap_or_default();
-
-                (t, out.jerk)
-            }),
-            &full_palette::BROWN,
-        );
-
         if self.show_pos {
             chart.draw_series(pos)?.label("Pos").legend(|(x, y)| {
                 Rectangle::new([(x, y + 1), (x + 8, y)], full_palette::DEEPORANGE)
@@ -131,13 +117,6 @@ impl PlottingState {
                 .draw_series(acc)?
                 .label("Acc")
                 .legend(|(x, y)| Rectangle::new([(x, y + 1), (x + 8, y)], full_palette::BLUE));
-        }
-
-        if self.show_jerk {
-            chart
-                .draw_series(jerk)?
-                .label("Jerk")
-                .legend(|(x, y)| Rectangle::new([(x, y + 1), (x + 8, y)], full_palette::BROWN));
         }
 
         chart
@@ -194,7 +173,6 @@ fn build_ui(app: &gtk::Application) {
             &Lim {
                 vel: lim_vel_scale.value() as f32,
                 acc: lim_acc_scale.value() as f32,
-                jerk: lim_jerk_scale.value() as f32,
             },
         ),
     }));
@@ -251,7 +229,6 @@ fn build_ui(app: &gtk::Application) {
                     &Lim {
                         vel: state.lim_vel as f32,
                         acc: state.lim_acc as f32,
-                        jerk: state.lim_jerk as f32,
                     },
                 );
 

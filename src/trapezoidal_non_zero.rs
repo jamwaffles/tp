@@ -1,11 +1,9 @@
 //! Trapezoidal trajectory with non-zero initial velocity.
 
 #[derive(Default, Debug, Clone, Copy, PartialEq)]
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
 pub struct Lim {
     pub vel: f32,
     pub acc: f32,
-    pub jerk: f32,
 }
 
 #[derive(Debug, Default, Clone, Copy)]
@@ -13,7 +11,6 @@ pub struct Out {
     pub pos: f32,
     pub vel: f32,
     pub acc: f32,
-    pub jerk: f32,
 }
 
 impl core::ops::Add for Out {
@@ -24,7 +21,6 @@ impl core::ops::Add for Out {
             pos: self.pos + rhs.pos,
             vel: self.vel + rhs.vel,
             acc: self.acc + rhs.acc,
-            jerk: self.jerk + rhs.jerk,
         }
     }
 }
@@ -45,7 +41,7 @@ pub struct Segment {
     /// Start time of this segment.
     start_t: f32,
     /// Duration of this segment.
-    t: f32,
+    pub t: f32,
     /// Initial position.
     q0: f32,
     /// Final position.
@@ -59,7 +55,7 @@ pub struct Segment {
     total_time: f32,
 
     /// Acceleration time.
-    t_a: f32,
+    pub t_a: f32,
 
     /// Deceleration time.
     t_d: f32,
@@ -72,9 +68,11 @@ pub struct Segment {
 }
 
 impl Segment {
+    // Compute a trajectory that goes from `q0` to `q1` in the fastest time possible whilst
+    // respecting the given limits.
     pub fn new(q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim) -> Self {
         assert!(
-            lim.acc > 0.0 && lim.vel > 0.0 && lim.jerk > 0.0,
+            lim.acc > 0.0 && lim.vel > 0.0,
             "Limits must all be positive values"
         );
 
@@ -184,7 +182,6 @@ impl Segment {
                 pos: q0 + v0 * (t - t0) + (vlim - v0) / (2.0 * t_a) * (t - t0).powi(2),
                 vel: v0 + (vlim - v0) / t_a * (t - t0),
                 acc: (vlim - v0) / t_a,
-                jerk: 0.0,
             })
         }
         // Coast (3.13b)
@@ -193,7 +190,6 @@ impl Segment {
                 pos: q0 + v0 * t_a / 2.0 + vlim * (t - t0 - t_a / 2.0),
                 vel: *vlim,
                 acc: 0.0,
-                jerk: 0.0,
             })
         }
         // Decel (3.13c) (non-inclusive)
@@ -202,7 +198,6 @@ impl Segment {
                 pos: q1 - v1 * (t1 - t) - (vlim - v1) / (2.0 * t_d) * (t1 - t).powi(2),
                 vel: v1 + (vlim - v1) / t_d * (t1 - t),
                 acc: -(vlim - v1) / t_d,
-                jerk: 0.0,
             })
         }
         // Out of range
@@ -214,7 +209,6 @@ impl Segment {
             pos: out.pos * self.sign,
             vel: out.vel * self.sign,
             acc: out.acc * self.sign,
-            jerk: out.jerk * self.sign,
         })
     }
 
