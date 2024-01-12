@@ -9,7 +9,7 @@ use nalgebra::Vector3;
 
 pub type Coord3 = Vector3<f32>;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Default)]
 pub struct ArcBlend {
     pub prev: Coord3,
     pub mid: Coord3,

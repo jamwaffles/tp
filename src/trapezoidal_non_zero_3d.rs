@@ -53,7 +53,7 @@ pub struct Segment {
     v1: Coord3,
 
     /// Total time.
-    total_time: f32,
+    pub total_time: f32,
 
     /// Acceleration time.
     t_a: f32,
