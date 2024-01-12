@@ -1,6 +1,7 @@
-/// Trapezoidal trajectory with multiple points using non-zero start and end velocities.
+//! Trapezoidal trajectory with non-zero initial velocity.
 
-#[derive(Default, Debug, Clone, Copy)]
+#[derive(Default, Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(test, derive(arbitrary::Arbitrary))]
 pub struct Lim {
     pub vel: f32,
     pub acc: f32,
@@ -72,19 +73,13 @@ pub struct Segment {
 
 impl Segment {
     pub fn new(q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim) -> Self {
-        println!("---");
-        let sign = (q1 - q0).signum();
+        assert!(
+            lim.acc > 0.0 && lim.vel > 0.0 && lim.jerk > 0.0,
+            "Limits must all be positive values"
+        );
 
-        // Correct signs for trajectories with negative positions at start and/or end
-        let lim = {
-            Lim {
-                // NOTE: This is verbatim out of the book, eq. 3.32. Probably a lot of room here for
-                // optimisation.
-                vel: { (sign + 1.0) / 2.0 * lim.vel + (sign - 1.0) / 2.0 * -lim.vel },
-                acc: { (sign + 1.0) / 2.0 * lim.acc + (sign - 1.0) / 2.0 * -lim.acc },
-                jerk: { (sign + 1.0) / 2.0 * lim.jerk + (sign - 1.0) / 2.0 * -lim.jerk },
-            }
-        };
+        // println!("---");
+        let sign = (q1 - q0).signum();
 
         let q0 = sign * q0;
         let q1 = sign * q1;
@@ -101,12 +96,12 @@ impl Segment {
             vel: v_max,
             acc: a_max,
             ..
-        } = lim;
+        } = *lim;
 
         // Displacement
         let h = q1 - q0;
 
-        dbg!(sign, q0, q1, a_max, v_max);
+        // dbg!(sign, q0, q1, a_max, v_max);
 
         // Was the given max velocity reached? If so, this segment will contain a cruise phase.
         let v_lim_reached = {
@@ -125,7 +120,7 @@ impl Segment {
             f32::sqrt(h * a_max + (v0.powi(2) + v1.powi(2)) / 2.0)
         };
 
-        dbg!(v_lim_reached, h, a_max);
+        // dbg!(v_lim_reached, h, a_max);
 
         let t_a = (vlim - v0) / a_max;
         let t_d = (vlim - v1) / a_max;
@@ -232,60 +227,5 @@ impl Segment {
             t_v: 0.0,
             total_time: self.total_time,
         }
-    }
-}
-
-#[derive(Debug, Default)]
-pub struct Segments {
-    segments: Vec<Segment>,
-}
-
-impl Segments {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    fn add_segment(&mut self, segment: Segment) {
-        // If overlap is disabled, just push the segment. This would be the "complete stop" mode.
-
-        // If overlap is enabled
-
-        // If next segment has a lower velocity than current vlim, set previous v1 to this lower
-        // velocity and recompute.
-
-        // Note: Newly pushed segment has v0 = vlim, v1 = 0
-
-        // TODO: What happens if all the durations are too short?
-
-        // Else if segment has higher velocity, set previous v1 to previous vlim (so no prev decel), and
-        // set current segment v0 to prev v1, with vlim as whatever velocity it wants.
-
-        // Else
-
-        // No accel or decel. Ensure curr v1 / next v0 is correct
-
-        todo!()
-    }
-
-    pub fn total_time(&self) -> f32 {
-        todo!()
-    }
-
-    pub fn iter(&self) -> impl Iterator<Item = &Segment> {
-        self.segments.iter()
-    }
-
-    pub fn tp(&self, t: f32) -> Option<Out> {
-        todo!()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    // use super::*;
-
-    #[test]
-    fn multi() {
-        //
     }
 }
