@@ -58,10 +58,10 @@ pub struct Segment {
     pub t_a: f32,
 
     /// Deceleration time.
-    t_d: f32,
+    pub t_d: f32,
 
     /// Highest velocity reached in this segment.
-    vlim: f32,
+    pub vlim: f32,
 
     /// Sign of displacement.
     sign: f32,
