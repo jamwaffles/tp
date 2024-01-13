@@ -132,15 +132,21 @@ impl ArcBlend {
         let pos = (self.arc_start - self.arc_center).slerp(&(self.arc_end - self.arc_center), t);
         let pos = self.arc_center + pos * self.arc_radius;
 
-        // Acceleration always points towards center of circle
+        // Centripetal acceleration: it always points towards center of circle
         // TODO: Magnitude
         let acc = (self.arc_center - pos).normalize();
 
-        Some(Out {
-            pos,
-            vel: Coord3::zeros(),
-            acc,
-        })
+        // TODO: Magnitude
+        let vel = {
+            let a = self.mid - self.prev;
+            let b = self.next - self.mid;
+
+            let normal = b.cross(&a).normalize();
+
+            (normal.cross(&acc)).normalize()
+        };
+
+        Some(Out { pos, vel, acc })
     }
 }
 

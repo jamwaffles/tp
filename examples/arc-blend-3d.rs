@@ -81,20 +81,46 @@ fn main() {
 
         let mut prev_point = Point3::new(blend.arc_start.x, blend.arc_start.y, blend.arc_start.z);
 
+        // Normal of plane passing through the 3 points of the trajectory
+        {
+            let a = blend.mid - blend.prev;
+            let b = blend.next - blend.mid;
+
+            let result = p2 + a.cross(&b).normalize();
+
+            window.draw_line(
+                &Point3::new(p2.x, p2.y, p2.z),
+                &Point3::new(result.x, result.y, result.z),
+                &Point3::new(1.0, 1.0, 1.0),
+            );
+        }
+
         let mut t = 0.0;
 
         while t <= blend.time {
-            let Out { pos, acc, .. } = blend.tp(t).unwrap();
+            let Out { pos, acc, vel } = blend.tp(t).unwrap();
 
             let pos_point = Point3::new(pos.x, pos.y, pos.z);
 
             window.draw_line(&prev_point, &pos_point, &Point3::new(0.0, 1.0, 1.0));
 
-            let acc_vector = pos + acc.normalize() * 0.3;
+            // Velocity vector
+            {
+                let vector = pos + vel.normalize() * 0.3;
+                let end_point = Point3::new(vector.x, vector.y, vector.z);
 
-            let acc_end_point = Point3::new(acc_vector.x, acc_vector.y, acc_vector.z);
+                // Cyan
+                window.draw_line(&pos_point, &end_point, &Point3::new(0.0, 1.0, 1.0));
+            }
 
-            window.draw_line(&pos_point, &acc_end_point, &Point3::new(1.0, 0.0, 1.0));
+            // Acceleration vector
+            {
+                let vector = pos + acc.normalize() * 0.3;
+                let end_point = Point3::new(vector.x, vector.y, vector.z);
+
+                // Magenta
+                window.draw_line(&pos_point, &end_point, &Point3::new(1.0, 0.0, 1.0));
+            }
 
             prev_point = pos_point;
 
