@@ -2,6 +2,12 @@
 <!-- Generated with glade 3.38.2 -->
 <interface>
   <requires lib="gtk+" version="3.24"/>
+  <object class="GtkAdjustment" id="AccelAdjust">
+    <property name="upper">10</property>
+    <property name="value">5</property>
+    <property name="step-increment">0.10</property>
+    <property name="page-increment">10</property>
+  </object>
   <object class="GtkAdjustment" id="DeviationLimi">
     <property name="upper">4</property>
     <property name="value">0.5</property>
@@ -22,7 +28,7 @@
         <property name="can-focus">False</property>
         <property name="orientation">vertical</property>
         <child>
-          <!-- n-columns=2 n-rows=3 -->
+          <!-- n-columns=2 n-rows=4 -->
           <object class="GtkGrid">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
@@ -70,7 +76,7 @@
               </object>
               <packing>
                 <property name="left-attach">0</property>
-                <property name="top-attach">2</property>
+                <property name="top-attach">3</property>
                 <property name="width">2</property>
               </packing>
             </child>
@@ -97,6 +103,31 @@
               <packing>
                 <property name="left-attach">1</property>
                 <property name="top-attach">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="label" translatable="yes">Acceleration limit</property>
+              </object>
+              <packing>
+                <property name="left-attach">0</property>
+                <property name="top-attach">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkScale" id="AccelLimit">
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="adjustment">AccelAdjust</property>
+                <property name="round-digits">2</property>
+                <property name="digits">2</property>
+                <property name="value-pos">left</property>
+              </object>
+              <packing>
+                <property name="left-attach">1</property>
+                <property name="top-attach">2</property>
               </packing>
             </child>
           </object>

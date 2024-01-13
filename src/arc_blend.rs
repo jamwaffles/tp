@@ -33,7 +33,13 @@ pub struct ArcBlend {
 }
 
 impl ArcBlend {
-    pub fn new(prev: Coord3, mid: Coord3, next: Coord3, max_deviation: f32) -> Self {
+    pub fn new(
+        prev: Coord3,
+        mid: Coord3,
+        next: Coord3,
+        max_deviation: f32,
+        max_acceleration: f32,
+    ) -> Self {
         // Qi
         let prev_delta: Vector3<f32> = mid - prev;
         // Qi+1
@@ -94,10 +100,9 @@ impl ArcBlend {
         // s: Length of arc
         let arc_len = outside_angle * arc_radius;
 
-        // TODO: Configurable from global trajectory limits
         // TODO: This would be the smaller of the 3 axis acceleration limits
         // TODO: Need to take into account arc rotation
-        let accel_limit = 5.0;
+        let accel_limit = max_acceleration;
 
         // For a trajectory, this will be the min of this value, and the global velocity limit
         let velocity_limit = f32::sqrt(arc_radius * accel_limit);
@@ -144,7 +149,7 @@ mod tests {
         let p2 = Coord3::new(2.0, 0.0, 0.0);
         let p3 = Coord3::new(5.0, 0.0, 0.0);
 
-        ArcBlend::new(p1, p2, p3, 0.1);
+        ArcBlend::new(p1, p2, p3, 0.1, 5.0);
     }
 
     #[test]
@@ -153,7 +158,7 @@ mod tests {
         let p2 = Coord3::new(0.0, 0.0, 0.0);
         let p3 = Coord3::new(10.0, 0.0, 0.0);
 
-        ArcBlend::new(p1, p2, p3, 0.1);
+        ArcBlend::new(p1, p2, p3, 0.1, 5.0);
     }
 
     #[test]
@@ -162,6 +167,6 @@ mod tests {
         let p2 = Coord3::new(0.0, 10.0, 0.0);
         let p3 = Coord3::new(10.0, 10.0, 0.0);
 
-        ArcBlend::new(p1, p2, p3, f32::INFINITY);
+        ArcBlend::new(p1, p2, p3, f32::INFINITY, 5.0);
     }
 }

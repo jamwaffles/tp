@@ -13,6 +13,7 @@ const GLADE_UI_SOURCE: &'static str = include_str!("arc-blend.glade");
 #[derive(Debug, Default)]
 struct PlottingState {
     deviation_limit: f64,
+    accel_limit: f64,
     start_x: f64,
     p1: Coord3,
     p2: Coord3,
@@ -34,7 +35,13 @@ impl PlottingState {
 
         let root = root.margin(margin, margin, margin, margin);
 
-        let blend = ArcBlend::new(p1, p2, p3, self.deviation_limit as f32);
+        let blend = ArcBlend::new(
+            p1,
+            p2,
+            p3,
+            self.deviation_limit as f32,
+            self.accel_limit as f32,
+        );
 
         // Chart must be square to get circle in the right position
         let range = p1.y.min(p2.y).min(p3.y).min(p1.x).min(p2.x).min(p3.x)
@@ -116,7 +123,13 @@ impl PlottingState {
 
         let root = root.margin(margin, margin, margin, margin);
 
-        let blend = ArcBlend::new(p1, p2, p3, self.deviation_limit as f32);
+        let blend = ArcBlend::new(
+            p1,
+            p2,
+            p3,
+            self.deviation_limit as f32,
+            self.accel_limit as f32,
+        );
 
         let y_range = blend.arc_start.max().max(blend.arc_end.max())
             ..blend.arc_start.min().min(blend.arc_end.min());
@@ -140,29 +153,63 @@ impl PlottingState {
             (t, out)
         });
 
+        // Position
+
         chart
             .draw_series(LineSeries::new(
                 pos_iter.clone().map(|(t, out)| (t, out.pos.x)),
-                &full_palette::DEEPORANGE,
+                &full_palette::RED_A100,
             ))?
             .label("Pos X")
-            .legend(|(x, y)| Rectangle::new([(x, y + 1), (x + 8, y)], full_palette::DEEPORANGE));
+            .legend(|(x, y)| Rectangle::new([(x, y + 1), (x + 8, y)], full_palette::RED_A100));
 
         chart
             .draw_series(LineSeries::new(
                 pos_iter.clone().map(|(t, out)| (t, out.pos.y)),
-                &full_palette::BLUEGREY,
+                &full_palette::PINK_A100,
             ))?
             .label("Pos Y")
-            .legend(|(x, y)| Rectangle::new([(x, y + 1), (x + 8, y)], full_palette::BLUEGREY));
+            .legend(|(x, y)| Rectangle::new([(x, y + 1), (x + 8, y)], full_palette::PINK_A100));
 
         chart
             .draw_series(LineSeries::new(
                 pos_iter.clone().map(|(t, out)| (t, out.pos.z)),
-                &full_palette::GREEN_500,
+                &full_palette::DEEPPURPLE_A100,
             ))?
             .label("Pos Z")
-            .legend(|(x, y)| Rectangle::new([(x, y + 1), (x + 8, y)], full_palette::GREEN_500));
+            .legend(|(x, y)| {
+                Rectangle::new([(x, y + 1), (x + 8, y)], full_palette::DEEPPURPLE_A100)
+            });
+
+        // Velocity
+
+        // TODO
+
+        // Acceleration
+
+        chart
+            .draw_series(LineSeries::new(
+                pos_iter.clone().map(|(t, out)| (t, out.acc.x)),
+                &full_palette::PURPLE,
+            ))?
+            .label("Acc X")
+            .legend(|(x, y)| Rectangle::new([(x, y + 1), (x + 8, y)], full_palette::PURPLE));
+
+        chart
+            .draw_series(LineSeries::new(
+                pos_iter.clone().map(|(t, out)| (t, out.acc.y)),
+                &full_palette::BLUE,
+            ))?
+            .label("Acc Y")
+            .legend(|(x, y)| Rectangle::new([(x, y + 1), (x + 8, y)], full_palette::BLUE));
+
+        chart
+            .draw_series(LineSeries::new(
+                pos_iter.clone().map(|(t, out)| (t, out.acc.z)),
+                &full_palette::TEAL,
+            ))?
+            .label("Acc Z")
+            .legend(|(x, y)| Rectangle::new([(x, y + 1), (x + 8, y)], full_palette::TEAL));
 
         chart
             .configure_series_labels()
@@ -187,10 +234,12 @@ fn build_ui(app: &gtk::Application) {
 
     let stats = builder.object::<gtk::Label>("Stats").unwrap();
     let deviation_limit_scale = builder.object::<gtk::Scale>("DeviationLimit").unwrap();
+    let accel_limit_scale = builder.object::<gtk::Scale>("AccelLimit").unwrap();
     let start_x_scale = builder.object::<gtk::Scale>("StartX").unwrap();
 
     let app_state = Rc::new(RefCell::new(PlottingState {
         deviation_limit: deviation_limit_scale.value(),
+        accel_limit: accel_limit_scale.value(),
         start_x: start_x_scale.value(),
         p1: Coord3::new(start_x_scale.value() as f32, 5.0, 0.0),
         p2: Coord3::new(0.0, 0.0, 0.0),
@@ -225,7 +274,18 @@ fn build_ui(app: &gtk::Application) {
     stats.connect_draw(move |widget, _cr| {
         let state = state_cloned.borrow();
 
-        widget.set_text(&format!("Deviation limit {}", state.deviation_limit));
+        let blend = ArcBlend::new(
+            state.p1,
+            state.p2,
+            state.p3,
+            state.deviation_limit as f32,
+            state.accel_limit as f32,
+        );
+
+        widget.set_text(&format!(
+            "Deviation limit {}, accel limit {}, velocity limit {}",
+            state.deviation_limit, state.accel_limit, blend.velocity_limit
+        ));
 
         Inhibit(false)
     });
@@ -268,6 +328,7 @@ fn build_ui(app: &gtk::Application) {
 
     handle_change(&deviation_limit_scale, Box::new(|s| &mut s.deviation_limit));
     handle_change(&start_x_scale, Box::new(|s| &mut s.start_x));
+    handle_change(&accel_limit_scale, Box::new(|s| &mut s.accel_limit));
 
     window.show_all();
 }

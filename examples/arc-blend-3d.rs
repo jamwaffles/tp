@@ -15,7 +15,7 @@ fn main() {
     let p2 = Coord3::new(0.0, 0.0, 2.0);
     let p3 = Coord3::new(7.0, 0.0, 1.0);
 
-    let blend = ArcBlend::new(p1, p2, p3, 0.5);
+    let blend = ArcBlend::new(p1, p2, p3, 0.5, 5.0);
 
     let mut window = Window::new("Arc blend with two segments");
 
@@ -83,7 +83,7 @@ fn main() {
 
         let mut t = 0.0;
 
-        while t <= 1.0 {
+        while t <= blend.time {
             let pos = blend.tp(t).unwrap().pos;
 
             let pos = Point3::new(pos.x, pos.y, pos.z);
