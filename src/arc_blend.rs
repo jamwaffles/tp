@@ -9,6 +9,13 @@ use nalgebra::Vector3;
 
 pub type Coord3 = Vector3<f32>;
 
+#[derive(Debug, Default, Clone, Copy)]
+pub struct Out {
+    pub pos: Coord3,
+    pub vel: Coord3,
+    pub acc: Coord3,
+}
+
 #[derive(Debug, Copy, Clone, Default)]
 pub struct ArcBlend {
     pub prev: Coord3,
@@ -88,8 +95,6 @@ impl ArcBlend {
         // For a trajectory, this will be the min of this value, and the global velocity limit
         let velocity_limit = f32::sqrt(arc_radius * accel_limit);
 
-        dbg!(velocity_limit);
-
         Self {
             prev,
             mid,
@@ -103,6 +108,20 @@ impl ArcBlend {
             velocity_limit,
             time: velocity_limit * arc_len,
         }
+    }
+
+    pub fn tp(&self, t: f32) -> Option<Out> {
+        if t >= self.time {
+            return None;
+        }
+
+        let pos = self.arc_start.slerp(&self.arc_end, t);
+
+        Some(Out {
+            pos,
+            vel: Coord3::zeros(),
+            acc: Coord3::zeros(),
+        })
     }
 }
 
