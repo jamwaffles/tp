@@ -7,7 +7,7 @@ use tp::arc_blend::ArcBlend;
 use tp::trapezoidal_non_zero_3d::Coord3;
 
 fn main() {
-    let eye = Point3::new(10.0f32, 10.0, 10.0);
+    let eye = Point3::new(5.0f32, 5.0, 5.0);
     let at = Point3::origin();
     let mut arc_ball = ArcBall::new(eye, at);
 
@@ -31,7 +31,7 @@ fn main() {
     window.set_line_width(5.0);
     window.set_point_size(5.0);
 
-    let sphere = ncollide3d::procedural::sphere(blend.arc_radius * 2.0, 10, 10, false);
+    let sphere = ncollide3d::procedural::sphere(blend.arc_radius * 2.0, 20, 20, false);
     let mut sp = window.add_trimesh(sphere, Vector3::from_element(1.0));
     sp.set_color(0.7, 0.7, 0.7);
     sp.set_lines_width(1.0);
@@ -40,6 +40,30 @@ fn main() {
         blend.arc_center.x,
         blend.arc_center.y,
         blend.arc_center.z,
+    ));
+
+    let mut arc_center = window.add_sphere(0.1);
+    arc_center.set_color(1.0, 1.0, 1.0);
+    arc_center.append_translation(&Translation3::new(
+        blend.arc_center.x,
+        blend.arc_center.y,
+        blend.arc_center.z,
+    ));
+
+    let mut arc_start = window.add_sphere(0.1);
+    arc_start.set_color(0.0, 1.0, 0.0);
+    arc_start.append_translation(&Translation3::new(
+        blend.arc_start.x,
+        blend.arc_start.y,
+        blend.arc_start.z,
+    ));
+
+    let mut arc_end = window.add_sphere(0.1);
+    arc_end.set_color(1.0, 0.0, 0.0);
+    arc_end.append_translation(&Translation3::new(
+        blend.arc_end.x,
+        blend.arc_end.y,
+        blend.arc_end.z,
     ));
 
     while window.render_with_camera(&mut arc_ball) {
@@ -55,11 +79,11 @@ fn main() {
             &Point3::new(0.0, 1.0, 0.0),
         );
 
-        let mut prev_point = Point3::new(blend.prev.x, blend.prev.y, blend.prev.z);
+        let mut prev_point = Point3::new(blend.arc_start.x, blend.arc_start.y, blend.arc_start.z);
 
         let mut t = 0.0;
 
-        while t <= blend.time {
+        while t <= 1.0 {
             let pos = blend.tp(t).unwrap().pos;
 
             let pos = Point3::new(pos.x, pos.y, pos.z);

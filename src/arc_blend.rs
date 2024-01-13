@@ -78,11 +78,18 @@ impl ArcBlend {
             arc_center + (x_i * arc_radius)
         };
 
-        let end_point = {
-            let x_i = (mid - radius_limit * next_delta_norm - arc_center).normalize();
+        // Another way of finding start/end points from
+        // <https://math.stackexchange.com/questions/2343931/how-to-calculate-3d-arc-between-two-lines>
+        // let start_point = {
+        //     // Na
+        //     let mid_to_prev_normalised = (prev - mid).normalize();
 
-            arc_center + (x_i * arc_radius)
-        };
+        //     let p_a = mid + (arc_radius / half_angle.tan()) * mid_to_prev_normalised;
+
+        //     p_a
+        // };
+
+        let end_point = mid + arc_radius * next_delta_norm;
 
         // s: Length of arc
         let arc_len = outside_angle * arc_radius;
@@ -101,8 +108,8 @@ impl ArcBlend {
             next,
             max_deviation,
             arc_center,
-            arc_start: Coord3::new(start_point.x, start_point.y, start_point.z),
-            arc_end: Coord3::new(end_point.x, end_point.y, start_point.z),
+            arc_start: start_point,
+            arc_end: end_point,
             arc_radius,
             arc_len,
             velocity_limit,
@@ -115,7 +122,9 @@ impl ArcBlend {
             return None;
         }
 
-        let pos = self.arc_start.slerp(&self.arc_end, t);
+        let pos = (self.arc_start - self.arc_center).slerp(&(self.arc_end - self.arc_center), t);
+
+        let pos = self.arc_center + pos * self.arc_radius;
 
         Some(Out {
             pos,
