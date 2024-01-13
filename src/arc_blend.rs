@@ -127,14 +127,19 @@ impl ArcBlend {
             return None;
         }
 
-        let pos = (self.arc_start - self.arc_center).slerp(&(self.arc_end - self.arc_center), t);
+        let t = t / self.time;
 
+        let pos = (self.arc_start - self.arc_center).slerp(&(self.arc_end - self.arc_center), t);
         let pos = self.arc_center + pos * self.arc_radius;
+
+        // Acceleration always points towards center of circle
+        // TODO: Magnitude
+        let acc = (self.arc_center - pos).normalize();
 
         Some(Out {
             pos,
             vel: Coord3::zeros(),
-            acc: Coord3::zeros(),
+            acc,
         })
     }
 }

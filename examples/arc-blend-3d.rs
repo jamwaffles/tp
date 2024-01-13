@@ -3,7 +3,7 @@ use kiss3d::window::Window;
 use kiss3d::{camera::ArcBall, light::Light};
 use nalgebra::{Point3, Translation3, UnitQuaternion, Vector3};
 use std::f32::consts::PI;
-use tp::arc_blend::ArcBlend;
+use tp::arc_blend::{ArcBlend, Out};
 use tp::trapezoidal_non_zero_3d::Coord3;
 
 fn main() {
@@ -84,13 +84,19 @@ fn main() {
         let mut t = 0.0;
 
         while t <= blend.time {
-            let pos = blend.tp(t).unwrap().pos;
+            let Out { pos, acc, .. } = blend.tp(t).unwrap();
 
-            let pos = Point3::new(pos.x, pos.y, pos.z);
+            let pos_point = Point3::new(pos.x, pos.y, pos.z);
 
-            window.draw_line(&prev_point, &pos, &Point3::new(0.0, 1.0, 1.0));
+            window.draw_line(&prev_point, &pos_point, &Point3::new(0.0, 1.0, 1.0));
 
-            prev_point = pos;
+            let acc_vector = pos + acc.normalize() * 0.3;
+
+            let acc_end_point = Point3::new(acc_vector.x, acc_vector.y, acc_vector.z);
+
+            window.draw_line(&pos_point, &acc_end_point, &Point3::new(1.0, 0.0, 1.0));
+
+            prev_point = pos_point;
 
             t += 0.1;
         }
