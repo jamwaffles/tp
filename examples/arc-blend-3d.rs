@@ -1,3 +1,4 @@
+use kiss3d::ncollide3d;
 use kiss3d::window::Window;
 use kiss3d::{camera::ArcBall, light::Light};
 use nalgebra::{Point3, Translation3, UnitQuaternion, Vector3};
@@ -21,14 +22,25 @@ fn main() {
     let align_z_up = UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.0);
 
     let mut floor = window.add_quad(7.0, 7.0, 1, 1);
-    floor.set_color(0.2, 0.2, 0.2);
+    floor.set_color(0.3, 0.3, 0.3);
     floor.append_rotation_wrt_center(&align_z_up);
-    floor.append_translation(&Translation3::new(0.0, -0.1, 0.0));
+    floor.append_translation(&Translation3::new(0.0, -1.0, 0.0));
 
     window.set_light(Light::StickToCamera);
 
     window.set_line_width(5.0);
     window.set_point_size(5.0);
+
+    let sphere = ncollide3d::procedural::sphere(blend.arc_radius * 2.0, 10, 10, false);
+    let mut sp = window.add_trimesh(sphere, Vector3::from_element(1.0));
+    sp.set_color(0.7, 0.7, 0.7);
+    sp.set_lines_width(1.0);
+    sp.set_surface_rendering_activation(false);
+    sp.append_translation(&Translation3::new(
+        blend.arc_center.x,
+        blend.arc_center.y,
+        blend.arc_center.z,
+    ));
 
     while window.render_with_camera(&mut arc_ball) {
         window.draw_line(
@@ -52,7 +64,7 @@ fn main() {
 
             let pos = Point3::new(pos.x, pos.y, pos.z);
 
-            window.draw_line(&prev_point, &pos, &Point3::new(0.0, 0.0, 1.0));
+            window.draw_line(&prev_point, &pos, &Point3::new(0.0, 1.0, 1.0));
 
             prev_point = pos;
 

@@ -79,7 +79,7 @@ impl ArcBlend {
         };
 
         let end_point = {
-            let x_i = (mid + radius_limit * next_delta_norm - arc_center).normalize();
+            let x_i = (mid - radius_limit * next_delta_norm - arc_center).normalize();
 
             arc_center + (x_i * arc_radius)
         };
