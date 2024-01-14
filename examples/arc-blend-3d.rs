@@ -111,20 +111,20 @@ fn main() {
 
             // Velocity vector
             {
-                let vector = pos + vel.normalize() * 0.3;
+                let vector = pos + vel * 0.3;
                 let end_point = Point3::new(vector.x, vector.y, vector.z);
 
                 // Cyan
-                window.draw_line(&pos_point, &end_point, &Point3::new(0.0, 1.0, 1.0));
+                window.draw_line(&pos_point, &end_point, &Point3::from(vel.normalize()));
             }
 
             // Acceleration vector
             {
-                let vector = pos + acc.normalize() * 0.3;
+                let vector = pos + acc * 0.3;
                 let end_point = Point3::new(vector.x, vector.y, vector.z);
 
                 // Magenta
-                window.draw_line(&pos_point, &end_point, &Point3::new(1.0, 0.0, 1.0));
+                window.draw_line(&pos_point, &end_point, &Point3::from(acc.normalize()));
             }
 
             prev_point = pos_point;
