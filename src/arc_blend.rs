@@ -29,7 +29,7 @@ pub struct ArcBlend {
     pub arc_radius: f32,
     pub arc_end: Coord3,
     pub arc_len: f32,
-    pub velocity_limit: f32,
+    pub velocity_limit: Coord3,
     pub time: f32, // deviation: f32,
 }
 
@@ -104,16 +104,22 @@ impl ArcBlend {
         // s: Length of arc
         let arc_len = outside_angle * arc_radius;
 
-        // TODO: This would be the smaller of the 3 axis acceleration limits
         // TODO: Need to take into account arc rotation
         let accel_limit = max_acceleration;
 
-        // // For a trajectory, this will be the min of this value, and the global velocity limit.
-        // // Equation from <https://openstax.org/books/physics/pages/6-2-uniform-circular-motion> `a_c
-        // // = v^2 / r` rearranged.
-        // let velocity_limit = f32::sqrt(arc_radius * accel_limit);
-        // TODO: Might not need this as the max accel should be clamped, right?
-        let velocity_limit = 0.0;
+        // Equation from <https://openstax.org/books/physics/pages/6-2-uniform-circular-motion> `a_c
+        // = v^2 / r` rearranged.
+        let velocity_limit = {
+            let lim = arc_radius * accel_limit;
+
+            // Clamp limit to maximum allowed velocity for each axis
+            // TODO: Take into account arc rotation
+            Coord3::new(
+                lim.x.sqrt().min(max_velocity.x),
+                lim.y.sqrt().min(max_velocity.y),
+                lim.z.sqrt().min(max_velocity.z),
+            )
+        };
 
         Self {
             prev,
@@ -126,7 +132,7 @@ impl ArcBlend {
             arc_radius,
             arc_len,
             velocity_limit,
-            time: velocity_limit * arc_len,
+            time: velocity_limit.norm() * arc_len,
         }
     }
 
