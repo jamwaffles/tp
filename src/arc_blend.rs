@@ -148,6 +148,7 @@ impl ArcBlend {
         // TODO: Magnitude
         let acc = (self.arc_center - pos).normalize();
 
+        // Instantaneous velocity is always tangent to the arc
         // TODO: Magnitude
         let vel = {
             let a = self.mid - self.prev;
