@@ -38,7 +38,7 @@ impl ArcBlend {
         mid: Coord3,
         next: Coord3,
         max_deviation: f32,
-        max_acceleration: f32,
+        max_acceleration: Coord3,
     ) -> Self {
         // Qi
         let prev_delta: Vector3<f32> = mid - prev;
@@ -104,8 +104,12 @@ impl ArcBlend {
         // TODO: Need to take into account arc rotation
         let accel_limit = max_acceleration;
 
-        // For a trajectory, this will be the min of this value, and the global velocity limit
-        let velocity_limit = f32::sqrt(arc_radius * accel_limit);
+        // // For a trajectory, this will be the min of this value, and the global velocity limit.
+        // // Equation from <https://openstax.org/books/physics/pages/6-2-uniform-circular-motion> `a_c
+        // // = v^2 / r` rearranged.
+        // let velocity_limit = f32::sqrt(arc_radius * accel_limit);
+        // TODO: Might not need this as the max accel should be clamped, right?
+        let velocity_limit = 0.0;
 
         Self {
             prev,
@@ -160,7 +164,7 @@ mod tests {
         let p2 = Coord3::new(2.0, 0.0, 0.0);
         let p3 = Coord3::new(5.0, 0.0, 0.0);
 
-        ArcBlend::new(p1, p2, p3, 0.1, 5.0);
+        ArcBlend::new(p1, p2, p3, 0.1, Coord3::new(5.0, 5.0, 5.0));
     }
 
     #[test]
@@ -169,7 +173,7 @@ mod tests {
         let p2 = Coord3::new(0.0, 0.0, 0.0);
         let p3 = Coord3::new(10.0, 0.0, 0.0);
 
-        ArcBlend::new(p1, p2, p3, 0.1, 5.0);
+        ArcBlend::new(p1, p2, p3, 0.1, Coord3::new(5.0, 5.0, 5.0));
     }
 
     #[test]
@@ -178,6 +182,6 @@ mod tests {
         let p2 = Coord3::new(0.0, 10.0, 0.0);
         let p3 = Coord3::new(10.0, 10.0, 0.0);
 
-        ArcBlend::new(p1, p2, p3, f32::INFINITY, 5.0);
+        ArcBlend::new(p1, p2, p3, f32::INFINITY, Coord3::new(5.0, 5.0, 5.0));
     }
 }

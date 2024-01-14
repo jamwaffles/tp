@@ -40,7 +40,11 @@ impl PlottingState {
             p2,
             p3,
             self.deviation_limit as f32,
-            self.accel_limit as f32,
+            Coord3::new(
+                self.accel_limit as f32,
+                self.accel_limit as f32,
+                self.accel_limit as f32,
+            ),
         );
 
         // Chart must be square to get circle in the right position
@@ -128,7 +132,11 @@ impl PlottingState {
             p2,
             p3,
             self.deviation_limit as f32,
-            self.accel_limit as f32,
+            Coord3::new(
+                self.accel_limit as f32,
+                self.accel_limit as f32,
+                self.accel_limit as f32,
+            ),
         );
 
         let y_range = blend.arc_start.max().max(blend.arc_end.max())
@@ -279,7 +287,11 @@ fn build_ui(app: &gtk::Application) {
             state.p2,
             state.p3,
             state.deviation_limit as f32,
-            state.accel_limit as f32,
+            Coord3::new(
+                state.accel_limit as f32,
+                state.accel_limit as f32,
+                state.accel_limit as f32,
+            ),
         );
 
         widget.set_text(&format!(
