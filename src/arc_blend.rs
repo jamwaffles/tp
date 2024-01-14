@@ -5,6 +5,7 @@
 //!
 //! - Start and end points have discontinuous acceleration.
 
+use crate::trapezoidal_non_zero_3d::Lim;
 use nalgebra::Vector3;
 
 pub type Coord3 = Vector3<f32>;
@@ -38,7 +39,10 @@ impl ArcBlend {
         mid: Coord3,
         next: Coord3,
         max_deviation: f32,
-        max_acceleration: Coord3,
+        Lim {
+            acc: max_acceleration,
+            vel: max_velocity,
+        }: Lim,
     ) -> Self {
         // Qi
         let prev_delta: Vector3<f32> = mid - prev;
@@ -164,7 +168,16 @@ mod tests {
         let p2 = Coord3::new(2.0, 0.0, 0.0);
         let p3 = Coord3::new(5.0, 0.0, 0.0);
 
-        ArcBlend::new(p1, p2, p3, 0.1, Coord3::new(5.0, 5.0, 5.0));
+        ArcBlend::new(
+            p1,
+            p2,
+            p3,
+            0.1,
+            Lim {
+                acc: Coord3::new(5.0, 5.0, 5.0),
+                vel: Coord3::new(2.0, 2.0, 2.0),
+            },
+        );
     }
 
     #[test]
@@ -173,7 +186,16 @@ mod tests {
         let p2 = Coord3::new(0.0, 0.0, 0.0);
         let p3 = Coord3::new(10.0, 0.0, 0.0);
 
-        ArcBlend::new(p1, p2, p3, 0.1, Coord3::new(5.0, 5.0, 5.0));
+        ArcBlend::new(
+            p1,
+            p2,
+            p3,
+            0.1,
+            Lim {
+                acc: Coord3::new(5.0, 5.0, 5.0),
+                vel: Coord3::new(2.0, 2.0, 2.0),
+            },
+        );
     }
 
     #[test]
@@ -182,6 +204,15 @@ mod tests {
         let p2 = Coord3::new(0.0, 10.0, 0.0);
         let p3 = Coord3::new(10.0, 10.0, 0.0);
 
-        ArcBlend::new(p1, p2, p3, f32::INFINITY, Coord3::new(5.0, 5.0, 5.0));
+        ArcBlend::new(
+            p1,
+            p2,
+            p3,
+            f32::INFINITY,
+            Lim {
+                acc: Coord3::new(5.0, 5.0, 5.0),
+                vel: Coord3::new(2.0, 2.0, 2.0),
+            },
+        );
     }
 }

@@ -4,7 +4,7 @@ use kiss3d::{camera::ArcBall, light::Light};
 use nalgebra::{Point3, Translation3, UnitQuaternion, Vector3};
 use std::f32::consts::PI;
 use tp::arc_blend::{ArcBlend, Out};
-use tp::trapezoidal_non_zero_3d::Coord3;
+use tp::trapezoidal_non_zero_3d::{Coord3, Lim};
 
 fn main() {
     let eye = Point3::new(5.0f32, 5.0, 5.0);
@@ -15,7 +15,12 @@ fn main() {
     let p2 = Coord3::new(0.0, 0.0, 2.0);
     let p3 = Coord3::new(7.0, 0.0, 1.0);
 
-    let blend = ArcBlend::new(p1, p2, p3, 0.5, Coord3::new(5.0, 5.0, 5.0));
+    let lim = Lim {
+        acc: Coord3::new(5.0, 5.0, 5.0),
+        vel: Coord3::new(2.0, 2.0, 2.0),
+    };
+
+    let blend = ArcBlend::new(p1, p2, p3, 0.5, lim);
 
     let mut window = Window::new("Arc blend with two segments");
 

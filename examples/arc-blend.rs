@@ -6,7 +6,10 @@ use gtk::prelude::*;
 use plotters::prelude::*;
 use plotters::style::full_palette;
 use plotters_cairo::CairoBackend;
-use tp::arc_blend::{ArcBlend, Coord3};
+use tp::{
+    arc_blend::{ArcBlend, Coord3},
+    trapezoidal_non_zero_3d::Lim,
+};
 
 const GLADE_UI_SOURCE: &'static str = include_str!("arc-blend.glade");
 
@@ -35,17 +38,16 @@ impl PlottingState {
 
         let root = root.margin(margin, margin, margin, margin);
 
-        let blend = ArcBlend::new(
-            p1,
-            p2,
-            p3,
-            self.deviation_limit as f32,
-            Coord3::new(
+        let lim = Lim {
+            acc: Coord3::new(
                 self.accel_limit as f32,
                 self.accel_limit as f32,
                 self.accel_limit as f32,
             ),
-        );
+            vel: Coord3::new(2.0, 2.0, 2.0),
+        };
+
+        let blend = ArcBlend::new(p1, p2, p3, self.deviation_limit as f32, lim);
 
         // Chart must be square to get circle in the right position
         let range = p1.y.min(p2.y).min(p3.y).min(p1.x).min(p2.x).min(p3.x)
@@ -127,17 +129,16 @@ impl PlottingState {
 
         let root = root.margin(margin, margin, margin, margin);
 
-        let blend = ArcBlend::new(
-            p1,
-            p2,
-            p3,
-            self.deviation_limit as f32,
-            Coord3::new(
+        let lim = Lim {
+            acc: Coord3::new(
                 self.accel_limit as f32,
                 self.accel_limit as f32,
                 self.accel_limit as f32,
             ),
-        );
+            vel: Coord3::new(2.0, 2.0, 2.0),
+        };
+
+        let blend = ArcBlend::new(p1, p2, p3, self.deviation_limit as f32, lim);
 
         let y_range = blend.arc_start.max().max(blend.arc_end.max())
             ..blend.arc_start.min().min(blend.arc_end.min());
@@ -282,16 +283,21 @@ fn build_ui(app: &gtk::Application) {
     stats.connect_draw(move |widget, _cr| {
         let state = state_cloned.borrow();
 
+        let lim = Lim {
+            acc: Coord3::new(
+                state.accel_limit as f32,
+                state.accel_limit as f32,
+                state.accel_limit as f32,
+            ),
+            vel: Coord3::new(2.0, 2.0, 2.0),
+        };
+
         let blend = ArcBlend::new(
             state.p1,
             state.p2,
             state.p3,
             state.deviation_limit as f32,
-            Coord3::new(
-                state.accel_limit as f32,
-                state.accel_limit as f32,
-                state.accel_limit as f32,
-            ),
+            lim,
         );
 
         widget.set_text(&format!(

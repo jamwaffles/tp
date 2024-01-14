@@ -41,33 +41,15 @@ impl Trajectory {
         match self.npoints {
             0 => {
                 let b = &mut self.blends[0];
-                *b = ArcBlend::new(
-                    new_point,
-                    b.mid,
-                    b.next,
-                    self.max_deviation,
-                    Coord3::new(5.0, 5.0, 5.0),
-                );
+                *b = ArcBlend::new(new_point, b.mid, b.next, self.max_deviation, self.limits);
             }
             1 => {
                 let b = &mut self.blends[0];
-                *b = ArcBlend::new(
-                    b.prev,
-                    new_point,
-                    b.next,
-                    self.max_deviation,
-                    Coord3::new(5.0, 5.0, 5.0),
-                );
+                *b = ArcBlend::new(b.prev, new_point, b.next, self.max_deviation, self.limits);
             }
             _ => {
                 let b = self.blends.last_mut().expect("No blends?");
-                *b = ArcBlend::new(
-                    b.prev,
-                    b.mid,
-                    new_point,
-                    self.max_deviation,
-                    Coord3::new(5.0, 5.0, 5.0),
-                );
+                *b = ArcBlend::new(b.prev, b.mid, new_point, self.max_deviation, self.limits);
             }
         }
 
