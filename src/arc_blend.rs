@@ -6,7 +6,7 @@
 //! - Start and end points have discontinuous acceleration.
 
 use crate::trapezoidal_non_zero_3d::Lim;
-use nalgebra::Vector3;
+use nalgebra::{ComplexField, Vector3};
 
 pub type Coord3 = Vector3<f32>;
 
@@ -104,7 +104,6 @@ impl ArcBlend {
         // s: Length of arc
         let arc_len = outside_angle * arc_radius;
 
-        // TODO: Need to take into account arc rotation
         let accel_limit = max_acceleration;
 
         // Equation from <https://openstax.org/books/physics/pages/6-2-uniform-circular-motion> `a_c
@@ -113,7 +112,6 @@ impl ArcBlend {
             let lim = arc_radius * accel_limit;
 
             // Clamp limit to maximum allowed velocity for each axis
-            // TODO: Take into account arc rotation
             Coord3::new(
                 lim.x.sqrt().min(max_velocity.x),
                 lim.y.sqrt().min(max_velocity.y),
