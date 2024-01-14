@@ -99,7 +99,12 @@ impl ArcBlend {
         //     p_a
         // };
 
-        let end_point = mid + arc_radius * next_delta_norm;
+        let end_point = {
+            // Xi+1: Vector pointing from arc center to end point
+            let x_i = (mid + radius_limit * next_delta_norm - arc_center).normalize();
+
+            arc_center + (x_i * arc_radius)
+        };
 
         // s: Length of arc
         let arc_len = outside_angle * arc_radius;
