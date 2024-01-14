@@ -1,3 +1,20 @@
+# Arc blend velocity and acceleration limits
+
+## Each axis (cartesian)
+
+This is the most basic kinematics - just XYZ 3D space. This code will need modularising so other
+kinematics options can be used.
+
+## IK
+
+Look at the [`k`](https://github.com/openrr/k) crate.
+
+### Acceleration limits
+
+Get maximum of acceleration at start and end of arc, multiply by normalised acceleration limits (can
+be different for each axis) to get accel limits for each axis, scaled appropriately. Because we
+always run at max accel, the limit _is_ the accel.
+
 # LinuxCNC tolerance modes
 
 ## `G64`
