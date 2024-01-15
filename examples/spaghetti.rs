@@ -42,6 +42,7 @@ fn main() {
     floor.append_translation(&Translation3::new(0.0, -range / 2.0 - 0.5, 0.0));
 
     window.set_light(Light::StickToCamera);
+    window.set_line_width(2.0);
 
     let state = State { trajectory, lim };
 
