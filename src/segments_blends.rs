@@ -1,10 +1,8 @@
 //! Trapezoidal trajectory segments blended with arcs.
 
-use kiss3d::loader::obj::Coord;
-
 use crate::{
     arc_blend::ArcBlend,
-    trapezoidal_non_zero_3d::{Coord3, Lim, Segment},
+    trapezoidal_non_zero_3d::{Coord3, Lim},
 };
 
 #[derive(Debug)]
@@ -16,18 +14,16 @@ pub enum Item {
 
 #[derive(Debug)]
 pub struct Trajectory {
-    npoints: usize,
-    points: Vec<Coord3>,
-    blends: Vec<ArcBlend>,
-    limits: Lim,
-    max_deviation: f32,
+    pub points: Vec<Coord3>,
+    pub blends: Vec<ArcBlend>,
+    pub limits: Lim,
+    pub max_deviation: f32,
 }
 
 impl Trajectory {
     pub fn new() -> Self {
         Self {
             points: vec![Coord3::zeros()],
-            npoints: 0,
             max_deviation: 0.5,
             blends: vec![ArcBlend::default()],
             limits: Lim {
@@ -38,7 +34,7 @@ impl Trajectory {
     }
 
     pub fn push_point(&mut self, new_point: Coord3) {
-        match self.npoints {
+        match self.points.len() {
             0 => {
                 let b = &mut self.blends[0];
                 *b = ArcBlend::new(new_point, b.mid, b.next, self.max_deviation, self.limits);
@@ -47,13 +43,31 @@ impl Trajectory {
                 let b = &mut self.blends[0];
                 *b = ArcBlend::new(b.prev, new_point, b.next, self.max_deviation, self.limits);
             }
-            _ => {
-                let b = self.blends.last_mut().expect("No blends?");
+            2 => {
+                let b = &mut self.blends[0];
                 *b = ArcBlend::new(b.prev, b.mid, new_point, self.max_deviation, self.limits);
+            }
+            // More than 3 points and we have multiple blends
+            _ => {
+                // Prev is last blend's mid point
+                // Current is last blends next
+                // Next is new point just passed in
+
+                let prev = self.blends.last().unwrap().mid;
+                let mid = self.blends.last().unwrap().next;
+                let next = new_point;
+
+                self.blends.push(ArcBlend::new(
+                    prev,
+                    mid,
+                    next,
+                    self.max_deviation,
+                    self.limits,
+                ));
             }
         }
 
-        self.npoints += 1;
+        self.points.push(new_point);
     }
 }
 
