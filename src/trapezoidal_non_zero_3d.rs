@@ -102,10 +102,12 @@ impl Segment {
 
         dbg!(largest_traj.t, largest_traj.t_a);
 
+        // Scale limits for each axis to stay on the line
         let lim = {
             Lim {
                 vel: displacement.map(|axis| axis / (largest_traj.t - largest_traj.t_a)),
-                acc: displacement.map(|axis| axis / (largest_traj.t - largest_traj.t_a)),
+                acc: displacement
+                    .map(|axis| axis / (largest_traj.t_a * (largest_traj.t - largest_traj.t_a))),
             }
         };
 
