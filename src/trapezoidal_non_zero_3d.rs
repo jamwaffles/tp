@@ -73,10 +73,18 @@ impl Segment {
     pub fn new(q0: Coord3, q1: Coord3, v0: Coord3, v1: Coord3, lim: &Lim) -> Self {
         assert!(
             lim.acc > Coord3::zeros() && lim.vel > Coord3::zeros(),
-            "Limits must all be positive values"
+            "Limits must all be positive values, got {:?}",
+            lim
         );
 
         let displacement = q1 - q0;
+
+        let sign = displacement.map(|axis| axis.signum());
+
+        let q0 = q0.component_mul(&sign);
+        let q1 = q1.component_mul(&sign);
+
+        // let displacement = displacement.abs();
 
         dbg!(displacement);
 
@@ -102,7 +110,7 @@ impl Segment {
 
         dbg!(largest_traj.t, largest_traj.t_a);
 
-        // Scale limits for each axis to stay on the line
+        // Book section 3.2.3: Scale limits for each axis to stay on the line.
         let lim = {
             Lim {
                 vel: displacement.map(|axis| axis / (largest_traj.t - largest_traj.t_a)),
@@ -142,12 +150,12 @@ impl Segment {
             t_a: largest_traj.t_a,
             t_d: largest_traj.t_d,
             vlim,
-            sign: displacement.map(|axis| axis.signum()),
+            sign,
         }
     }
 
     /// Get trajectory parameters at the given time `t`.
-    pub fn tp(&self, t: f32) -> Option<Out> {
+    pub fn tp(&self, t: f32) -> Option<(Out, Phase)> {
         let Self {
             q0,
             q1,
@@ -165,8 +173,12 @@ impl Segment {
         let t1 = t0 + total_time;
         let t_delta = t - t0;
 
+        let mut phase = Phase::Accel;
+
         // Accel (3.13a)
         let out = if t_delta < t_a {
+            phase = Phase::Accel;
+
             Some(Out {
                 pos: q0 + v0 * (t - t0) + (vlim - v0) / (2.0 * t_a) * (t - t0).powi(2),
                 vel: v0 + (vlim - v0) / t_a * (t - t0),
@@ -175,6 +187,8 @@ impl Segment {
         }
         // Coast (3.13b)
         else if t_delta < (total_time - t_d) {
+            phase = Phase::Cruise;
+
             Some(Out {
                 pos: q0 + v0 * t_a / 2.0 + vlim * (t - t0 - t_a / 2.0),
                 vel: vlim,
@@ -183,6 +197,8 @@ impl Segment {
         }
         // Decel (3.13c) (non-inclusive)
         else if t_delta <= total_time {
+            phase = Phase::Decel;
+
             Some(Out {
                 pos: q1 - v1 * (t1 - t) - (vlim - v1) / (2.0 * t_d) * (t1 - t).powi(2),
                 vel: v1 + (vlim - v1) / t_d * (t1 - t),
@@ -194,12 +210,23 @@ impl Segment {
             None
         };
 
-        out.map(|out| Out {
-            pos: out.pos.component_mul(&self.sign),
-            vel: out.vel.component_mul(&self.sign),
-            acc: out.acc.component_mul(&self.sign),
+        out.map(|out| {
+            (
+                Out {
+                    pos: out.pos.component_mul(&self.sign),
+                    vel: out.vel.component_mul(&self.sign),
+                    acc: out.acc.component_mul(&self.sign),
+                },
+                phase,
+            )
         })
     }
+}
+
+pub enum Phase {
+    Accel,
+    Cruise,
+    Decel,
 }
 
 #[cfg(test)]

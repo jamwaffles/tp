@@ -71,10 +71,16 @@ impl Segment {
     // Compute a trajectory that goes from `q0` to `q1` in the fastest time possible whilst
     // respecting the given limits.
     pub fn new(q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim) -> Self {
-        assert!(
-            lim.acc > 0.0 && lim.vel > 0.0,
-            "Limits must all be positive values"
-        );
+        let lim = Lim {
+            vel: lim.vel.abs(),
+            acc: lim.acc.abs(),
+        };
+
+        // assert!(
+        //     lim.acc > 0.0 && lim.vel > 0.0,
+        //     "Limits must all be positive values, got {:?}",
+        //     lim
+        // );
 
         // println!("---");
         let sign = (q1 - q0).signum();
@@ -94,7 +100,7 @@ impl Segment {
             vel: v_max,
             acc: a_max,
             ..
-        } = *lim;
+        } = lim;
 
         // Displacement
         let h = q1 - q0;
