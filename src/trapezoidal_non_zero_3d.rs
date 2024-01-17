@@ -113,6 +113,7 @@ impl Segment {
         dbg!(largest_traj.t, largest_traj.t_a);
 
         // Book section 3.2.3: Scale limits for each axis to stay on the line.
+        // TODO: Take into account different velocity/acceleration limits per axis. Might just need to acc / acc[largest_axis]?
         let lim = {
             Lim {
                 vel: displacement.map(|axis| axis / (largest_traj.t - largest_traj.t_a)),
