@@ -81,6 +81,8 @@ impl Segment {
 
         let sign = displacement.map(|axis| axis.signum());
 
+        // TODO: This is reversed again within `trapezoidal_non_zero`. Need to optimise this
+        // double-negation out.
         let q0 = q0.component_mul(&sign);
         let q1 = q1.component_mul(&sign);
 
