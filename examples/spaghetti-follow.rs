@@ -28,7 +28,7 @@ fn main() {
 
     let mut trajectory = Trajectory::new();
 
-    for _ in 0..3 {
+    for _ in 0..10 {
         trajectory.push_point((Coord3::new_random() * range).map(|axis| axis - (range / 2.0)));
     }
 
@@ -106,20 +106,17 @@ fn main() {
             }
         }
 
-        for [a, b] in state
-            .trajectory
-            .points
-            .windows(2)
-            .map(|chunk| <&[Coord3; 2]>::try_from(chunk).unwrap())
-        {
-            let start = Point3::from(*a);
-            let end = Point3::from(*b);
+        // for [a, b] in state
+        //     .trajectory
+        //     .points
+        //     .windows(2)
+        //     .map(|chunk| <&[Coord3; 2]>::try_from(chunk).unwrap())
+        // {
+        //     let start = Point3::from(*a);
+        //     let end = Point3::from(*b);
 
-            window.draw_line(&start, &end, &Point3::new(1.0, 1.0, 1.0));
-
-            sph(&mut window, start, Point3::new(0.0, 1.0, 0.0));
-            sph(&mut window, end, Point3::new(1.0, 0.0, 0.0));
-        }
+        //     window.draw_line(&start, &end, &Point3::new(1.0, 1.0, 1.0));
+        // }
 
         let lines = state.trajectory.items.iter().filter_map(|item| match item {
             Item::Linear(line) => Some(line),
@@ -127,11 +124,8 @@ fn main() {
         });
 
         for line in lines {
-            let mut start = Point3::from(line.q0);
-            let mut end = Point3::from(line.q1);
-
-            // start.x += 0.01;
-            // end.x += 0.01;
+            let start = Point3::from(line.q0);
+            let end = Point3::from(line.q1);
 
             window.draw_line(&start, &end, &Point3::new(1.0, 0.0, 0.0));
 

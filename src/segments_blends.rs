@@ -95,7 +95,7 @@ impl Trajectory {
                 blend.start_t = prev_segment.total_time;
 
                 let segment = Segment::new(
-                    mid,
+                    blend.arc_end,
                     new_point,
                     Coord3::zeros(),
                     Coord3::zeros(),
