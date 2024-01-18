@@ -29,7 +29,7 @@ fn main() {
         vel: Coord3::new(2.0, 2.0, 2.0),
     };
 
-    let seg = Segment::new(p1, p2, Coord3::zeros(), Coord3::zeros(), &lim);
+    let seg = Segment::new(p1, p2, Coord3::zeros(), Coord3::zeros(), 0.0, &lim);
 
     let mut window = Window::new("Following a straight line");
 

@@ -42,15 +42,15 @@ impl core::ops::Add for Out {
 #[derive(Debug, Default)]
 pub struct Segment {
     /// Start time of this segment.
-    start_t: f32,
+    pub start_t: f32,
     /// Initial position.
-    q0: Coord3,
+    pub q0: Coord3,
     /// Final position.
-    q1: Coord3,
+    pub q1: Coord3,
     /// Initial velocity.
-    v0: Coord3,
+    pub v0: Coord3,
     /// Final velocity.
-    v1: Coord3,
+    pub v1: Coord3,
 
     /// Total time.
     pub total_time: f32,
@@ -70,7 +70,7 @@ pub struct Segment {
 
 impl Segment {
     // FIXME: This assumes the same acc/vel limit for all axes.
-    pub fn new(q0: Coord3, q1: Coord3, v0: Coord3, v1: Coord3, lim: &Lim) -> Self {
+    pub fn new(q0: Coord3, q1: Coord3, v0: Coord3, v1: Coord3, start_t: f32, lim: &Lim) -> Self {
         assert!(
             lim.acc > Coord3::zeros() && lim.vel > Coord3::zeros(),
             "Limits must all be positive values, got {:?}",
@@ -88,16 +88,16 @@ impl Segment {
 
         // let displacement = displacement.abs();
 
-        dbg!(displacement);
+        // dbg!(displacement);
 
         let largest_axis = displacement.imax();
 
-        dbg!(largest_axis, displacement.normalize());
+        // dbg!(largest_axis, displacement.normalize());
 
         // The displacement of each axis relative to the largest displacement (1.0)
         let relative_displacement = displacement / displacement[largest_axis];
 
-        dbg!(relative_displacement, "old lim", lim);
+        // dbg!(relative_displacement, "old lim", lim);
 
         let largest_traj = crate::trapezoidal_non_zero::Segment::new(
             q0[largest_axis],
@@ -110,7 +110,7 @@ impl Segment {
             },
         );
 
-        dbg!(largest_traj.t, largest_traj.t_a);
+        // dbg!(largest_traj.t, largest_traj.t_a);
 
         // Book section 3.2.3: Scale limits for each axis to stay on the line.
         // TODO: Take into account different velocity/acceleration limits per axis. Might just need to acc / acc[largest_axis]?
@@ -122,7 +122,7 @@ impl Segment {
             }
         };
 
-        dbg!("new lim", lim);
+        // dbg!("new lim", lim);
 
         let mut vlim = Coord3::zeros();
 
@@ -140,11 +140,11 @@ impl Segment {
 
             vlim[i] = seg.vlim;
 
-            dbg!(i, seg);
+            // dbg!(i, seg);
         }
 
         Self {
-            start_t: 0.0,
+            start_t,
             q0,
             q1,
             v0,
@@ -248,7 +248,7 @@ mod tests {
             acc: Coord3::new(5.0, 5.0, 5.0),
         };
 
-        let seg = Segment::new(q0, q1, v0, v1, &lim);
+        let seg = Segment::new(q0, q1, v0, v1, 0.0, &lim);
 
         dbg!(seg);
     }

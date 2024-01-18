@@ -5,17 +5,10 @@
 //!
 //! - Start and end points have discontinuous acceleration.
 
-use crate::trapezoidal_non_zero_3d::Lim;
-use nalgebra::{ComplexField, Vector3};
+use crate::trapezoidal_non_zero_3d::{Lim, Out};
+use nalgebra::Vector3;
 
 pub type Coord3 = Vector3<f32>;
-
-#[derive(Debug, Default, Clone, Copy)]
-pub struct Out {
-    pub pos: Coord3,
-    pub vel: Coord3,
-    pub acc: Coord3,
-}
 
 #[derive(Debug, Copy, Clone, Default)]
 pub struct ArcBlend {
@@ -30,7 +23,10 @@ pub struct ArcBlend {
     pub arc_end: Coord3,
     pub arc_len: f32,
     pub velocity_limit: Coord3,
-    pub time: f32, // deviation: f32,
+    pub time: f32,
+    pub start_t: f32,
+    // Actual deviation from the midpoint
+    // deviation: f32
 }
 
 impl ArcBlend {
@@ -39,6 +35,7 @@ impl ArcBlend {
         mid: Coord3,
         next: Coord3,
         max_deviation: f32,
+        start_t: f32,
         Lim {
             acc: max_acceleration,
             vel: max_velocity,
@@ -136,11 +133,14 @@ impl ArcBlend {
             arc_len,
             velocity_limit,
             time: velocity_limit.norm() * arc_len,
+            start_t,
         }
     }
 
     pub fn tp(&self, t: f32) -> Option<Out> {
-        if t >= self.time {
+        let t = t - self.start_t;
+
+        if t >= self.time || t < 0.0 {
             return None;
         }
 
@@ -183,6 +183,7 @@ mod tests {
             p2,
             p3,
             0.1,
+            0.0,
             Lim {
                 acc: Coord3::new(5.0, 5.0, 5.0),
                 vel: Coord3::new(2.0, 2.0, 2.0),
@@ -201,6 +202,7 @@ mod tests {
             p2,
             p3,
             0.1,
+            0.0,
             Lim {
                 acc: Coord3::new(5.0, 5.0, 5.0),
                 vel: Coord3::new(2.0, 2.0, 2.0),
@@ -219,6 +221,7 @@ mod tests {
             p2,
             p3,
             f32::INFINITY,
+            0.0,
             Lim {
                 acc: Coord3::new(5.0, 5.0, 5.0),
                 vel: Coord3::new(2.0, 2.0, 2.0),

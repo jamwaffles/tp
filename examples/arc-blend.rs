@@ -47,7 +47,7 @@ impl PlottingState {
             vel: Coord3::new(2.0, 2.0, 2.0),
         };
 
-        let blend = ArcBlend::new(p1, p2, p3, self.deviation_limit as f32, lim);
+        let blend = ArcBlend::new(p1, p2, p3, self.deviation_limit as f32, 0.0, lim);
 
         // Chart must be square to get circle in the right position
         let range = p1.y.min(p2.y).min(p3.y).min(p1.x).min(p2.x).min(p3.x)
@@ -138,7 +138,7 @@ impl PlottingState {
             vel: Coord3::new(2.0, 2.0, 2.0),
         };
 
-        let blend = ArcBlend::new(p1, p2, p3, self.deviation_limit as f32, lim);
+        let blend = ArcBlend::new(p1, p2, p3, self.deviation_limit as f32, 0.0, lim);
 
         let y_range = blend.arc_start.max().max(blend.arc_end.max())
             ..blend.arc_start.min().min(blend.arc_end.min());
@@ -297,6 +297,7 @@ fn build_ui(app: &gtk::Application) {
             state.p2,
             state.p3,
             state.deviation_limit as f32,
+            0.0,
             lim,
         );
 

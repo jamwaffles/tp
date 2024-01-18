@@ -6,8 +6,8 @@ use kiss3d::window::Window;
 use kiss3d::{camera::ArcBall, light::Light};
 use nalgebra::{Point3, Translation3, UnitQuaternion, Vector3};
 use std::f32::consts::PI;
-use tp::arc_blend::{ArcBlend, Out};
-use tp::trapezoidal_non_zero_3d::{Coord3, Lim};
+use tp::arc_blend::ArcBlend;
+use tp::trapezoidal_non_zero_3d::{Coord3, Lim, Out};
 
 struct State {
     p1: Coord3,
@@ -27,7 +27,7 @@ impl State {
     fn set_p2(&mut self, new_random: Coord3) {
         self.p2 = new_random;
 
-        self.blend = ArcBlend::new(self.p1, self.p2, self.p3, 0.5, self.lim);
+        self.blend = ArcBlend::new(self.p1, self.p2, self.p3, 0.5, 0.0, self.lim);
 
         self.arc_center
             .set_local_translation(Translation::from(self.blend.arc_center));
@@ -72,7 +72,7 @@ fn main() {
         vel: Coord3::new(2.0, 2.0, 2.0),
     };
 
-    let blend = ArcBlend::new(p1, p2, p3, 0.5, lim);
+    let blend = ArcBlend::new(p1, p2, p3, 0.5, 0.0, lim);
 
     let mut window = Window::new("Arc blend with two segments");
 

@@ -1,4 +1,4 @@
-//! Generate a bunch of random points in space, with blends.
+//! Generate a bunch of random points and plot the trajectory through them.
 
 use kiss3d::event::WindowEvent;
 use kiss3d::window::Window;
@@ -6,7 +6,7 @@ use kiss3d::{camera::ArcBall, light::Light};
 use nalgebra::{Point3, Translation3, UnitQuaternion, Vector3};
 use std::f32::consts::PI;
 use tp::arc_blend::Coord3;
-use tp::segments_blends::Trajectory;
+use tp::segments_blends::{Item, Trajectory};
 use tp::trapezoidal_non_zero_3d::{Lim, Out};
 
 struct State {
@@ -42,9 +42,24 @@ fn main() {
     floor.append_translation(&Translation3::new(0.0, -range / 2.0 - 0.5, 0.0));
 
     window.set_light(Light::StickToCamera);
-    window.set_line_width(2.0);
 
     let state = State { trajectory, lim };
+
+    for item in state.trajectory.items.iter() {
+        match item {
+            Item::Linear(line) => {
+                println!(
+                    "Linear   start {}, duration {}",
+                    line.start_t, line.total_time
+                )
+            }
+            Item::ArcBlend(blend) => {
+                println!("ArcBlend start {}, duration {}", blend.start_t, blend.time)
+            }
+        }
+    }
+
+    window.set_line_width(2.0);
 
     while window.render_with_camera(&mut arc_ball) {
         for event in window.events().iter() {
@@ -92,40 +107,28 @@ fn main() {
             sph(&mut window, end, Point3::new(1.0, 0.0, 0.0));
         }
 
-        for blend in state.trajectory.blends.iter() {
-            let mut prev_point =
-                Point3::new(blend.arc_start.x, blend.arc_start.y, blend.arc_start.z);
-            let mut t = 0.0;
+        let n_points = 500u16;
+        let mut prev_point =
+            Point3::from(*state.trajectory.points.first().expect("Empty trajectory"));
 
-            // // Normal of plane passing through the 3 points of the trajectory
-            // let colour = {
-            //     let a = blend.mid - blend.prev;
-            //     let b = blend.next - blend.mid;
+        for t in 0..n_points {
+            let t = f32::from(t) / (f32::from(n_points) / state.trajectory.total_time);
 
-            //     let result = a.cross(&b).normalize();
+            // dbg!(t, state.trajectory.total_time);
 
-            //     Point3::from(result)
-            // };
+            let Out {
+                pos,
+                acc: _,
+                vel: _,
+            } = state.trajectory.tp(t).expect("Out of bounds");
+
+            let pos = Point3::from(pos);
 
             let colour = Point3::new(0.0, 1.0, 1.0);
 
-            for t in 0..50u16 {
-                let t = f32::from(t) / (50.0 / blend.time);
+            window.draw_line(&prev_point, &pos, &colour);
 
-                let Out {
-                    pos,
-                    acc: _,
-                    vel: _,
-                } = blend.tp(t).unwrap();
-
-                let pos_point = Point3::new(pos.x, pos.y, pos.z);
-
-                // let colour = Point3::new(0.0, 1.0, 1.0);
-
-                window.draw_line(&prev_point, &pos_point, &colour);
-
-                prev_point = pos_point;
-            }
+            prev_point = pos;
         }
     }
 }
