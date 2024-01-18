@@ -6,7 +6,7 @@ use kiss3d::{camera::ArcBall, light::Light};
 use nalgebra::{Point3, Translation3, UnitQuaternion, Vector3};
 use std::f32::consts::PI;
 use tp::arc_blend::Coord3;
-use tp::segments_blends::Trajectory;
+use tp::segments_blends::{Item, Trajectory};
 use tp::trapezoidal_non_zero_3d::{Lim, Out};
 
 struct State {
@@ -28,7 +28,7 @@ fn main() {
 
     let mut trajectory = Trajectory::new();
 
-    for i in 0..10 {
+    for _ in 0..10 {
         trajectory.push_point((Coord3::new_random() * range).map(|axis| axis - (range / 2.0)));
     }
 
@@ -92,10 +92,12 @@ fn main() {
             sph(&mut window, end, Point3::new(1.0, 0.0, 0.0));
         }
 
-        for blend in state.trajectory.blends.iter() {
+        for blend in state.trajectory.items.iter().filter_map(|item| match item {
+            Item::Linear(_) => None,
+            Item::ArcBlend(blend) => Some(blend),
+        }) {
             let mut prev_point =
                 Point3::new(blend.arc_start.x, blend.arc_start.y, blend.arc_start.z);
-            let mut t = 0.0;
 
             // // Normal of plane passing through the 3 points of the trajectory
             // let colour = {
@@ -112,6 +114,8 @@ fn main() {
             for t in 0..50u16 {
                 let t = f32::from(t) / (50.0 / blend.time);
 
+                let t = blend.start_t + t;
+
                 let Out {
                     pos,
                     acc: _,
@@ -119,8 +123,6 @@ fn main() {
                 } = blend.tp(t).unwrap();
 
                 let pos_point = Point3::new(pos.x, pos.y, pos.z);
-
-                // let colour = Point3::new(0.0, 1.0, 1.0);
 
                 window.draw_line(&prev_point, &pos_point, &colour);
 
