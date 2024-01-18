@@ -29,7 +29,7 @@ fn main() {
     let mut trajectory = Trajectory::new();
 
     for i in 0..10 {
-        trajectory.push_point((Coord3::new_random() * range).map(|axis| axis - 2.0));
+        trajectory.push_point((Coord3::new_random() * range).map(|axis| axis - (range / 2.0)));
     }
 
     let mut window = Window::new("Spaghetti!");
