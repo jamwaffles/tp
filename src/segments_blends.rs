@@ -76,7 +76,7 @@ impl Trajectory {
             }
             // 3 points is a properly computed blend and two segments (one new)
             2 => {
-                let Some(&[prev, mid]) = self.points.get(0..2) else {
+                let &[prev, mid] = self.points.as_slice() else {
                     panic!("Last item should be a linear segment");
                 };
 
@@ -110,13 +110,6 @@ impl Trajectory {
             }
             // More than 3 points and we have multiple blends
             _ => {
-                // Prev is last blend's mid point
-                // Current is last blends next
-                // Next is new point just passed in
-
-                // let prev = self.blends.last().unwrap().mid;
-                // let mid = self.blends.last().unwrap().next;
-
                 let Some(Item::Linear(last_segment)) = self.items.last_mut() else {
                     panic!("Last item should be a linear segment");
                 };

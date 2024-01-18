@@ -28,7 +28,7 @@ fn main() {
 
     let mut trajectory = Trajectory::new();
 
-    for i in 0..10 {
+    for _ in 0..3 {
         trajectory.push_point((Coord3::new_random() * range).map(|axis| axis - (range / 2.0)));
     }
 
@@ -45,16 +45,30 @@ fn main() {
 
     let state = State { trajectory, lim };
 
+    for point in state.trajectory.points.iter() {
+        println!("Point {}, {}, {}", point.x, point.y, point.z);
+    }
+
     for item in state.trajectory.items.iter() {
         match item {
             Item::Linear(line) => {
                 println!(
-                    "Linear   start {}, duration {}",
-                    line.start_t, line.total_time
+                    "Linear   start {}, duration {} from {}, {}, {} -> {}, {}, {}",
+                    line.start_t,
+                    line.total_time,
+                    line.q0.x,
+                    line.q0.y,
+                    line.q0.z,
+                    line.q1.x,
+                    line.q1.y,
+                    line.q1.z,
                 )
             }
             Item::ArcBlend(blend) => {
-                println!("ArcBlend start {}, duration {}", blend.start_t, blend.time)
+                println!(
+                    "ArcBlend start {}, duration {}, midpoint {}, {}, {}",
+                    blend.start_t, blend.time, blend.mid.x, blend.mid.y, blend.mid.z,
+                )
             }
         }
     }
@@ -101,11 +115,63 @@ fn main() {
             let start = Point3::from(*a);
             let end = Point3::from(*b);
 
+            window.draw_line(&start, &end, &Point3::new(1.0, 1.0, 1.0));
+
+            sph(&mut window, start, Point3::new(0.0, 1.0, 0.0));
+            sph(&mut window, end, Point3::new(1.0, 0.0, 0.0));
+        }
+
+        let lines = state.trajectory.items.iter().filter_map(|item| match item {
+            Item::Linear(line) => Some(line),
+            Item::ArcBlend(_) => None,
+        });
+
+        for line in lines {
+            let mut start = Point3::from(line.q0);
+            let mut end = Point3::from(line.q1);
+
+            // start.x += 0.01;
+            // end.x += 0.01;
+
             window.draw_line(&start, &end, &Point3::new(1.0, 0.0, 0.0));
 
             sph(&mut window, start, Point3::new(0.0, 1.0, 0.0));
             sph(&mut window, end, Point3::new(1.0, 0.0, 0.0));
         }
+
+        let blends = state.trajectory.items.iter().filter_map(|item| match item {
+            Item::Linear(_) => None,
+            Item::ArcBlend(blend) => Some(blend),
+        });
+
+        for blend in blends {
+            let mut prev_point =
+                Point3::new(blend.arc_start.x, blend.arc_start.y, blend.arc_start.z);
+
+            let colour = Point3::new(0.0, 1.0, 1.0);
+
+            for t in 0..50u16 {
+                let t = f32::from(t) / (50.0 / blend.time);
+
+                let t = t + blend.start_t;
+
+                let Out {
+                    pos,
+                    acc: _,
+                    vel: _,
+                } = blend.tp(t).unwrap();
+
+                let pos_point = Point3::new(pos.x, pos.y, pos.z);
+
+                // let colour = Point3::new(0.0, 1.0, 1.0);
+
+                window.draw_line(&prev_point, &pos_point, &colour);
+
+                prev_point = pos_point;
+            }
+        }
+
+        continue;
 
         let n_points = 500u16;
         let mut prev_point =
