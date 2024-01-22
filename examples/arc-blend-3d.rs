@@ -91,7 +91,10 @@ fn main() {
     let ball = ncollide3d::procedural::sphere(blend.arc_radius * 2.0, 20, 20, false);
     let mut ball = window.add_trimesh(ball, Vector3::from_element(1.0));
     ball.set_color(0.7, 0.7, 0.7);
+
+    #[cfg(not(target_os = "macos"))]
     ball.set_lines_width(1.0);
+
     ball.set_surface_rendering_activation(false);
     ball.append_translation(&Translation3::new(
         blend.arc_center.x,

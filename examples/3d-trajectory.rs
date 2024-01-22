@@ -42,6 +42,7 @@ fn main() {
 
     window.set_light(Light::StickToCamera);
 
+    #[cfg(not(target_os = "macos"))]
     window.set_line_width(2.0);
 
     let mut state = State { p1, p2, lim, seg };

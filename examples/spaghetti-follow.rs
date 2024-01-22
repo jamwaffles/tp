@@ -73,6 +73,7 @@ fn main() {
         }
     }
 
+    #[cfg(not(target_os = "macos"))]
     window.set_line_width(2.0);
 
     while window.render_with_camera(&mut arc_ball) {
