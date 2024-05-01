@@ -29,14 +29,27 @@ fn main() {
     let mut trajectory = Trajectory::new();
 
     // Generate random points on every run
-    for _ in 0..10 {
-        trajectory.push_point((Coord3::new_random() * range).map(|axis| axis - (range / 2.0)));
-    }
+    // for _ in 0..10 {
+    //     trajectory.push_point((Coord3::new_random() * range).map(|axis| axis - (range / 2.0)));
+    // }
 
-    // // Weird broken test case
-    // trajectory.push_point(Coord3::new(0.69154215, -1.7893867, -0.38952398));
-    // trajectory.push_point(Coord3::new(0.115730524, 0.83142185, -0.56099606));
-    // trajectory.push_point(Coord3::new(0.89620423, 1.502274, -1.7002156));
+    // trajectory.push_point(Coord3::new(-1.6222603, 0.24761677, -0.0));
+    // trajectory.push_point(Coord3::new(0.14164257, 1.5352588, -0.0));
+    // trajectory.push_point(Coord3::new(-1.7471104, -1.8398974, -0.0));
+    // // Setting an X value greater than the point before breaks things. A more negative X value works
+    // // fine.
+    // trajectory.push_point(Coord3::new(/* -1.2149141, */ -1.4, 0.36791587, 0.0));
+
+    // Broken trajectory when both points are negative
+    trajectory.push_point(Coord3::new(0.0, 0.0, 0.0));
+    trajectory.push_point(Coord3::new(-1.0, 1.0, 0.0));
+    trajectory.push_point(Coord3::new(-0.5, 3.0, 0.0));
+    trajectory.push_point(Coord3::new(0.5, 4.0, 0.0));
+
+    // // Broken trajectory when points cross zero
+    // trajectory.push_point(Coord3::new(-2.0, 0.0, 0.0));
+    // trajectory.push_point(Coord3::new(1.0, 1.0, 0.0));
+    // trajectory.push_point(Coord3::new(1.0, 2.0, 0.0));
 
     let mut window = Window::new("Spaghetti!");
 
@@ -122,67 +135,67 @@ fn main() {
         );
 
         // Uncomment to draw lines between desired path points
-        // for [a, b] in state
-        //     .trajectory
-        //     .points
-        //     .windows(2)
-        //     .map(|chunk| <&[Coord3; 2]>::try_from(chunk).unwrap())
-        // {
-        //     let start = Point3::from(*a);
-        //     let end = Point3::from(*b);
+        for [a, b] in state
+            .trajectory
+            .points
+            .windows(2)
+            .map(|chunk| <&[Coord3; 2]>::try_from(chunk).unwrap())
+        {
+            let start = Point3::from(*a);
+            let end = Point3::from(*b);
 
-        //     window.draw_line(&start, &end, &Point3::new(1.0, 1.0, 1.0));
-        // }
+            window.draw_line(&start, &end, &Point3::new(1.0, 1.0, 1.0));
+        }
 
-        // let lines = state.trajectory.items.iter().filter_map(|item| match item {
-        //     Item::Linear(line) => Some(line),
-        //     Item::ArcBlend(_) => None,
-        // });
+        let lines = state.trajectory.items.iter().filter_map(|item| match item {
+            Item::Linear(line) => Some(line),
+            Item::ArcBlend(_) => None,
+        });
 
         // Draw straight line segments between blends. Commented out for now as we want to draw the
         // lines using the TP output.
-        // for line in lines {
-        //     let start = Point3::from(line.q0);
-        //     let end = Point3::from(line.q1);
+        for line in lines {
+            let start = Point3::from(line.q0);
+            let end = Point3::from(line.q1);
 
-        //     window.draw_line(&start, &end, &Point3::new(1.0, 0.0, 0.0));
+            window.draw_line(&start, &end, &Point3::new(1.0, 0.0, 0.0));
 
-        //     sph(&mut window, start, Point3::new(0.0, 1.0, 0.0));
-        //     sph(&mut window, end, Point3::new(1.0, 0.0, 0.0));
-        // }
+            sph(&mut window, start, Point3::new(0.0, 1.0, 0.0));
+            sph(&mut window, end, Point3::new(1.0, 0.0, 0.0));
+        }
 
-        // let blends = state.trajectory.items.iter().filter_map(|item| match item {
-        //     Item::Linear(_) => None,
-        //     Item::ArcBlend(blend) => Some(blend),
-        // });
+        let blends = state.trajectory.items.iter().filter_map(|item| match item {
+            Item::Linear(_) => None,
+            Item::ArcBlend(blend) => Some(blend),
+        });
 
-        // // Draw blend arcs using a bunch of line segments for each one
-        // for blend in blends {
-        //     let mut prev_point =
-        //         Point3::new(blend.arc_start.x, blend.arc_start.y, blend.arc_start.z);
+        // Draw blend arcs using a bunch of line segments for each one
+        for blend in blends {
+            let mut prev_point =
+                Point3::new(blend.arc_start.x, blend.arc_start.y, blend.arc_start.z);
 
-        //     let colour = Point3::new(0.0, 1.0, 1.0);
+            let colour = Point3::new(1.0, 0.0, 0.0);
 
-        //     for t in 0..50u16 {
-        //         let t = f32::from(t) / (50.0 / blend.time);
+            for t in 0..50u16 {
+                let t = f32::from(t) / (50.0 / blend.time);
 
-        //         let t = t + blend.start_t;
+                let t = t + blend.start_t;
 
-        //         let Out {
-        //             pos,
-        //             acc: _,
-        //             vel: _,
-        //         } = blend.tp(t).unwrap();
+                let Out {
+                    pos,
+                    acc: _,
+                    vel: _,
+                } = blend.tp(t).unwrap();
 
-        //         let pos_point = Point3::new(pos.x, pos.y, pos.z);
+                let pos_point = Point3::new(pos.x, pos.y, pos.z);
 
-        //         // let colour = Point3::new(0.0, 1.0, 1.0);
+                // let colour = Point3::new(0.0, 1.0, 1.0);
 
-        //         window.draw_line(&prev_point, &pos_point, &colour);
+                window.draw_line(&prev_point, &pos_point, &colour);
 
-        //         prev_point = pos_point;
-        //     }
-        // }
+                prev_point = pos_point;
+            }
+        }
 
         // Draw straight trajectory segments using output of planner
         let n_points = 500u16;

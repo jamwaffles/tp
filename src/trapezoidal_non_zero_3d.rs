@@ -77,72 +77,145 @@ impl Segment {
             lim
         );
 
-        let displacement = q1 - q0;
-
-        let sign = displacement.map(|axis| axis.signum());
-        // let sign = Coord3::new(1.0, 1.0, 1.0);
+        // let sign = (q1 - q0).map(|axis| axis.signum());
+        let sign = Coord3::new(1.0, 1.0, 1.0);
 
         let q0 = q0.component_mul(&sign);
         let q1 = q1.component_mul(&sign);
+        let v0 = v0.component_mul(&sign);
+        let v1 = v1.component_mul(&sign);
+
+        // Displacement
+        let h = q1 - q0;
+
+        let largest_axis = h.imax();
+
+        let process_axis = |axis: usize, limits: &Lim| {
+            let h = h[axis];
+            let a_max = limits.acc[axis];
+            let v_max = limits.vel[axis];
+            let v0 = v0[axis];
+            let v1 = v1[axis];
+
+            // Was the given max velocity reached? If so, this segment will contain a cruise phase.
+            let v_lim_reached = {
+                let lhs = h * a_max;
+
+                let rhs = v_max.powi(2) - (v0.powi(2) + v1.powi(2)) / 2.0;
+
+                lhs > rhs
+            };
+
+            let vlim = if v_lim_reached {
+                // We reached max allowed velocity
+                v_max
+            } else {
+                // Didn't reach max velocity, so reduce it by how much acceleration we can get away with
+                f32::sqrt(h * a_max + (v0.powi(2) + v1.powi(2)) / 2.0)
+            };
+
+            // dbg!(v_lim_reached, h, a_max);
+
+            let t_a = (vlim - v0) / a_max;
+            let t_d = (vlim - v1) / a_max;
+
+            // Total duration of this segment
+            let total_time = if v_lim_reached {
+                h / v_max
+                    + v_max / (2.0 * a_max) * (1.0 - v0 / v_max).powi(2)
+                    + v_max / (2.0 * a_max) * (1.0 - v1 / v_max).powi(2)
+            } else {
+                // No cruise, so just sum accel + decel
+                t_a + t_d
+            };
+
+            // dbg!(v0, v1, a_max, t_a, t_d, total_time, vlim, h);
+            (t_a, t_d, total_time, vlim)
+        };
+
+        // Book section 3.2.2: Compute accel period Ta and total duration T for axis with largest
+        // displacement.
+        // TODO: How do we handle axes with different max velocities/accelerations?
+        let (largest_axis_accel_time, largest_axis_decel_time, largest_axis_total_time, _) =
+            process_axis(largest_axis, &lim);
+
+        // Compute new limits based on largest axis. This synchronises all other axes.
+        let lim = {
+            Lim {
+                vel: h.map(|axis| axis / (largest_axis_total_time - largest_axis_accel_time)),
+                acc: h.map(|axis| {
+                    axis / (largest_axis_accel_time
+                        * (largest_axis_total_time - largest_axis_accel_time))
+                }),
+            }
+        };
+
+        let mut vlim = Coord3::zeros();
+
+        for i in 0..q0.len() {
+            let (_, _, _, limit) = process_axis(i, &lim);
+
+            vlim[i] = limit;
+
+            // dbg!(i, seg);
+        }
 
         // let displacement = displacement.abs();
 
         // dbg!(displacement);
 
-        let largest_axis = displacement.imax();
+        // let largest_axis = displacement.imax();
 
         // dbg!(largest_axis, displacement.normalize());
 
         // The displacement of each axis relative to the largest displacement (1.0)
-        let relative_displacement = displacement / displacement[largest_axis];
+        // let relative_displacement = displacement / displacement[largest_axis];
 
         // dbg!(relative_displacement, "old lim", lim);
 
-        let largest_traj = crate::trapezoidal_non_zero::Segment::new(
-            q0[largest_axis],
-            q1[largest_axis],
-            v0[largest_axis],
-            v1[largest_axis],
-            &crate::trapezoidal_non_zero::Lim {
-                vel: lim.vel[largest_axis],
-                acc: lim.acc[largest_axis],
-            },
-            true,
-        );
+        // let largest_traj = crate::trapezoidal_non_zero::Segment::new(
+        //     q0[largest_axis],
+        //     q1[largest_axis],
+        //     v0[largest_axis],
+        //     v1[largest_axis],
+        //     &crate::trapezoidal_non_zero::Lim {
+        //         vel: lim.vel[largest_axis],
+        //         acc: lim.acc[largest_axis],
+        //     },
+        // );
 
         // dbg!(largest_traj.t, largest_traj.t_a);
 
         // Book section 3.2.3: Scale limits for each axis to stay on the line.
         // TODO: Take into account different velocity/acceleration limits per axis. Might just need to acc / acc[largest_axis]?
-        let lim = {
-            Lim {
-                vel: displacement.map(|axis| axis / (largest_traj.t - largest_traj.t_a)),
-                acc: displacement
-                    .map(|axis| axis / (largest_traj.t_a * (largest_traj.t - largest_traj.t_a))),
-            }
-        };
+        // let lim = {
+        //     Lim {
+        //         vel: displacement.map(|axis| axis / (largest_traj.t - largest_traj.t_a)),
+        //         acc: displacement
+        //             .map(|axis| axis / (largest_traj.t_a * (largest_traj.t - largest_traj.t_a))),
+        //     }
+        // };
 
         // dbg!("new lim", lim);
 
-        let mut vlim = Coord3::zeros();
+        // let mut vlim = Coord3::zeros();
 
-        for i in 0..q0.len() {
-            let seg = crate::trapezoidal_non_zero::Segment::new(
-                q0[i],
-                q1[i],
-                v0[i],
-                v1[i],
-                &crate::trapezoidal_non_zero::Lim {
-                    vel: lim.vel[i],
-                    acc: lim.acc[i],
-                },
-                true,
-            );
+        // for i in 0..q0.len() {
+        //     let seg = crate::trapezoidal_non_zero::Segment::new(
+        //         q0[i],
+        //         q1[i],
+        //         v0[i],
+        //         v1[i],
+        //         &crate::trapezoidal_non_zero::Lim {
+        //             vel: lim.vel[i],
+        //             acc: lim.acc[i],
+        //         },
+        //     );
 
-            vlim[i] = seg.vlim;
+        //     vlim[i] = seg.vlim;
 
-            // dbg!(i, seg);
-        }
+        //     // dbg!(i, seg);
+        // }
 
         Self {
             start_t,
@@ -150,9 +223,9 @@ impl Segment {
             q1,
             v0,
             v1,
-            total_time: largest_traj.t,
-            t_a: largest_traj.t_a,
-            t_d: largest_traj.t_d,
+            total_time: largest_axis_total_time,
+            t_a: largest_axis_accel_time,
+            t_d: largest_axis_decel_time,
             vlim,
             sign,
         }
