@@ -22,8 +22,8 @@ fn main() {
     let range = 4.0;
 
     let lim = Lim {
-        acc: Coord3::new(5.0, 5.0, 5.0),
-        vel: Coord3::new(2.0, 2.0, 2.0),
+        acc: Coord3::new(50.0, 1.0, 2.0),
+        vel: Coord3::new(2.0, 3.0, 2.0),
     };
 
     let mut trajectory = Trajectory::new();
@@ -32,24 +32,6 @@ fn main() {
     for _ in 0..10 {
         trajectory.push_point((Coord3::new_random() * range).map(|axis| axis - (range / 2.0)));
     }
-
-    // trajectory.push_point(Coord3::new(-1.6222603, 0.24761677, -0.0));
-    // trajectory.push_point(Coord3::new(0.14164257, 1.5352588, -0.0));
-    // trajectory.push_point(Coord3::new(-1.7471104, -1.8398974, -0.0));
-    // // Setting an X value greater than the point before breaks things. A more negative X value works
-    // // fine.
-    // trajectory.push_point(Coord3::new(/* -1.2149141, */ -1.4, 0.36791587, 0.0));
-
-    // // Broken trajectory when both points are negative
-    // trajectory.push_point(Coord3::new(0.0, 0.0, 0.0));
-    // trajectory.push_point(Coord3::new(-1.0, 1.0, 0.0));
-    // trajectory.push_point(Coord3::new(-0.5, 3.0, 0.0));
-    // trajectory.push_point(Coord3::new(0.5, 4.0, 0.0));
-
-    // // Broken trajectory when points cross zero
-    // trajectory.push_point(Coord3::new(-2.0, 0.0, 0.0));
-    // trajectory.push_point(Coord3::new(1.0, 1.0, 0.0));
-    // trajectory.push_point(Coord3::new(1.0, 2.0, 0.0));
 
     let mut window = Window::new("Spaghetti!");
 

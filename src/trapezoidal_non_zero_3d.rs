@@ -69,7 +69,6 @@ pub struct Segment {
 }
 
 impl Segment {
-    // FIXME: This assumes the same acc/vel limit for all axes.
     pub fn new(q0: Coord3, q1: Coord3, v0: Coord3, v1: Coord3, start_t: f32, lim: &Lim) -> Self {
         assert!(
             lim.acc > Coord3::zeros() && lim.vel > Coord3::zeros(),
@@ -135,7 +134,6 @@ impl Segment {
 
         // Book section 3.2.2: Compute accel period Ta and total duration T for axis with largest
         // displacement.
-        // TODO: How do we handle axes with different max velocities/accelerations?
         let (largest_axis_accel_time, largest_axis_decel_time, largest_axis_total_time, _) =
             process_axis(largest_axis, &lim);
 
@@ -156,66 +154,7 @@ impl Segment {
             let (_, _, _, limit) = process_axis(i, &lim);
 
             vlim[i] = limit;
-
-            // dbg!(i, seg);
         }
-
-        // let displacement = displacement.abs();
-
-        // dbg!(displacement);
-
-        // let largest_axis = displacement.imax();
-
-        // dbg!(largest_axis, displacement.normalize());
-
-        // The displacement of each axis relative to the largest displacement (1.0)
-        // let relative_displacement = displacement / displacement[largest_axis];
-
-        // dbg!(relative_displacement, "old lim", lim);
-
-        // let largest_traj = crate::trapezoidal_non_zero::Segment::new(
-        //     q0[largest_axis],
-        //     q1[largest_axis],
-        //     v0[largest_axis],
-        //     v1[largest_axis],
-        //     &crate::trapezoidal_non_zero::Lim {
-        //         vel: lim.vel[largest_axis],
-        //         acc: lim.acc[largest_axis],
-        //     },
-        // );
-
-        // dbg!(largest_traj.t, largest_traj.t_a);
-
-        // Book section 3.2.3: Scale limits for each axis to stay on the line.
-        // TODO: Take into account different velocity/acceleration limits per axis. Might just need to acc / acc[largest_axis]?
-        // let lim = {
-        //     Lim {
-        //         vel: displacement.map(|axis| axis / (largest_traj.t - largest_traj.t_a)),
-        //         acc: displacement
-        //             .map(|axis| axis / (largest_traj.t_a * (largest_traj.t - largest_traj.t_a))),
-        //     }
-        // };
-
-        // dbg!("new lim", lim);
-
-        // let mut vlim = Coord3::zeros();
-
-        // for i in 0..q0.len() {
-        //     let seg = crate::trapezoidal_non_zero::Segment::new(
-        //         q0[i],
-        //         q1[i],
-        //         v0[i],
-        //         v1[i],
-        //         &crate::trapezoidal_non_zero::Lim {
-        //             vel: lim.vel[i],
-        //             acc: lim.acc[i],
-        //         },
-        //     );
-
-        //     vlim[i] = seg.vlim;
-
-        //     // dbg!(i, seg);
-        // }
 
         Self {
             start_t,
