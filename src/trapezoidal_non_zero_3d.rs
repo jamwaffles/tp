@@ -77,8 +77,8 @@ impl Segment {
             lim
         );
 
-        // let sign = (q1 - q0).map(|axis| axis.signum());
-        let sign = Coord3::new(1.0, 1.0, 1.0);
+        let sign = (q1 - q0).map(|axis| axis.signum());
+        // let sign = Coord3::new(1.0, 1.0, 1.0);
 
         let q0 = q0.component_mul(&sign);
         let q1 = q1.component_mul(&sign);

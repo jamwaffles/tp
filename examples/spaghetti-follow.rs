@@ -40,11 +40,11 @@ fn main() {
     // // fine.
     // trajectory.push_point(Coord3::new(/* -1.2149141, */ -1.4, 0.36791587, 0.0));
 
-    // Broken trajectory when both points are negative
-    trajectory.push_point(Coord3::new(0.0, 0.0, 0.0));
-    trajectory.push_point(Coord3::new(-1.0, 1.0, 0.0));
-    trajectory.push_point(Coord3::new(-0.5, 3.0, 0.0));
-    trajectory.push_point(Coord3::new(0.5, 4.0, 0.0));
+    // // Broken trajectory when both points are negative
+    // trajectory.push_point(Coord3::new(0.0, 0.0, 0.0));
+    // trajectory.push_point(Coord3::new(-1.0, 1.0, 0.0));
+    // trajectory.push_point(Coord3::new(-0.5, 3.0, 0.0));
+    // trajectory.push_point(Coord3::new(0.5, 4.0, 0.0));
 
     // // Broken trajectory when points cross zero
     // trajectory.push_point(Coord3::new(-2.0, 0.0, 0.0));
