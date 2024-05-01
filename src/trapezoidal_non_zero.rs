@@ -70,7 +70,7 @@ pub struct Segment {
 impl Segment {
     // Compute a trajectory that goes from `q0` to `q1` in the fastest time possible whilst
     // respecting the given limits.
-    pub fn new(q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim) -> Self {
+    pub fn new(q0: f32, q1: f32, v0: f32, v1: f32, lim: &Lim, force_sign: bool) -> Self {
         let lim = Lim {
             vel: lim.vel.abs(),
             acc: lim.acc.abs(),
@@ -83,7 +83,7 @@ impl Segment {
         // );
 
         // println!("---");
-        let sign = (q1 - q0).signum();
+        let sign = if !force_sign { (q1 - q0).signum() } else { 1.0 };
 
         let q0 = sign * q0;
         let q1 = sign * q1;

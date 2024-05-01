@@ -174,6 +174,7 @@ fn build_ui(app: &gtk::Application) {
                 vel: lim_vel_scale.value() as f32,
                 acc: lim_acc_scale.value() as f32,
             },
+            false,
         ),
     }));
 
@@ -230,6 +231,7 @@ fn build_ui(app: &gtk::Application) {
                         vel: state.lim_vel as f32,
                         acc: state.lim_acc as f32,
                     },
+                    false,
                 );
 
                 drawing_area.queue_draw();

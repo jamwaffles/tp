@@ -28,9 +28,15 @@ fn main() {
 
     let mut trajectory = Trajectory::new();
 
+    // Generate random points on every run
     for _ in 0..10 {
         trajectory.push_point((Coord3::new_random() * range).map(|axis| axis - (range / 2.0)));
     }
+
+    // // Weird broken test case
+    // trajectory.push_point(Coord3::new(0.69154215, -1.7893867, -0.38952398));
+    // trajectory.push_point(Coord3::new(0.115730524, 0.83142185, -0.56099606));
+    // trajectory.push_point(Coord3::new(0.89620423, 1.502274, -1.7002156));
 
     let mut window = Window::new("Spaghetti!");
 
@@ -179,15 +185,12 @@ fn main() {
         // }
 
         // Draw straight trajectory segments using output of planner
-        // FIXME: Output is discontinuous from planner at time of writing
         let n_points = 500u16;
         let mut prev_point =
             Point3::from(*state.trajectory.points.first().expect("Empty trajectory"));
 
         for t in 0..n_points {
             let t = f32::from(t) / (f32::from(n_points) / state.trajectory.total_time);
-
-            // dbg!(t, state.trajectory.total_time);
 
             let (
                 Out {

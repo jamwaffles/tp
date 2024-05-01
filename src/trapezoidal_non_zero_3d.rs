@@ -79,11 +79,9 @@ impl Segment {
 
         let displacement = q1 - q0;
 
-        // let sign = displacement.map(|axis| axis.signum());
-        let sign = Coord3::new(1.0, 1.0, 1.0);
+        let sign = displacement.map(|axis| axis.signum());
+        // let sign = Coord3::new(1.0, 1.0, 1.0);
 
-        // TODO: This is reversed again within `trapezoidal_non_zero`. Need to optimise this
-        // double-negation out.
         let q0 = q0.component_mul(&sign);
         let q1 = q1.component_mul(&sign);
 
@@ -109,6 +107,7 @@ impl Segment {
                 vel: lim.vel[largest_axis],
                 acc: lim.acc[largest_axis],
             },
+            true,
         );
 
         // dbg!(largest_traj.t, largest_traj.t_a);
@@ -137,6 +136,7 @@ impl Segment {
                     vel: lim.vel[i],
                     acc: lim.acc[i],
                 },
+                true,
             );
 
             vlim[i] = seg.vlim;
