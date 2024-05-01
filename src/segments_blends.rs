@@ -114,8 +114,8 @@ impl Trajectory {
                     panic!("Last item should be a linear segment");
                 };
 
-                let prev = last_segment.q0;
-                let mid = last_segment.q1;
+                let prev = last_segment.q0();
+                let mid = last_segment.q1();
                 let next = new_point;
 
                 let mut blend =
@@ -124,10 +124,10 @@ impl Trajectory {
                 // Move last segment's end point to the start of the new blend
                 // TODO: Make this a setter instead of clobbering the previous segment completely.
                 let prev_segment_replace = Segment::new(
-                    last_segment.q0,
+                    last_segment.q0(),
                     blend.arc_start,
-                    last_segment.v0,
-                    last_segment.v1,
+                    last_segment.v0(),
+                    last_segment.v1(),
                     last_segment.start_t,
                     &self.limits,
                 );

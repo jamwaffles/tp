@@ -29,9 +29,9 @@ fn main() {
     let mut trajectory = Trajectory::new();
 
     // Generate random points on every run
-    // for _ in 0..10 {
-    //     trajectory.push_point((Coord3::new_random() * range).map(|axis| axis - (range / 2.0)));
-    // }
+    for _ in 0..10 {
+        trajectory.push_point((Coord3::new_random() * range).map(|axis| axis - (range / 2.0)));
+    }
 
     // trajectory.push_point(Coord3::new(-1.6222603, 0.24761677, -0.0));
     // trajectory.push_point(Coord3::new(0.14164257, 1.5352588, -0.0));
@@ -75,12 +75,12 @@ fn main() {
                     "Linear   start {}, duration {} from {}, {}, {} -> {}, {}, {}",
                     line.start_t,
                     line.total_time,
-                    line.q0.x,
-                    line.q0.y,
-                    line.q0.z,
-                    line.q1.x,
-                    line.q1.y,
-                    line.q1.z,
+                    line.q0().x,
+                    line.q0().y,
+                    line.q0().z,
+                    line.q1().x,
+                    line.q1().y,
+                    line.q1().z,
                 )
             }
             Item::ArcBlend(blend) => {
@@ -155,8 +155,8 @@ fn main() {
         // Draw straight line segments between blends. Commented out for now as we want to draw the
         // lines using the TP output.
         for line in lines {
-            let start = Point3::from(line.q0);
-            let end = Point3::from(line.q1);
+            let start = Point3::from(line.q0());
+            let end = Point3::from(line.q1());
 
             window.draw_line(&start, &end, &Point3::new(1.0, 0.0, 0.0));
 

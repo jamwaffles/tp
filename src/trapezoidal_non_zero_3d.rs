@@ -44,13 +44,13 @@ pub struct Segment {
     /// Start time of this segment.
     pub start_t: f32,
     /// Initial position.
-    pub q0: Coord3,
+    q0: Coord3,
     /// Final position.
-    pub q1: Coord3,
+    q1: Coord3,
     /// Initial velocity.
-    pub v0: Coord3,
+    v0: Coord3,
     /// Final velocity.
-    pub v1: Coord3,
+    v1: Coord3,
 
     /// Total time.
     pub total_time: f32,
@@ -88,7 +88,7 @@ impl Segment {
         // Displacement
         let h = q1 - q0;
 
-        let largest_axis = h.imax();
+        let largest_axis = h.abs().imax();
 
         let process_axis = |axis: usize, limits: &Lim| {
             let h = h[axis];
@@ -297,6 +297,22 @@ impl Segment {
                 phase,
             )
         })
+    }
+
+    pub fn q0(&self) -> Coord3 {
+        self.q0.component_mul(&self.sign)
+    }
+
+    pub fn q1(&self) -> Coord3 {
+        self.q1.component_mul(&self.sign)
+    }
+
+    pub fn v0(&self) -> Coord3 {
+        self.v0.component_mul(&self.sign)
+    }
+
+    pub fn v1(&self) -> Coord3 {
+        self.v1.component_mul(&self.sign)
     }
 }
 
