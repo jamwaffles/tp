@@ -168,7 +168,8 @@ impl Trajectory {
         self.points.push(new_point);
     }
 
-    pub fn tp(&self, t: f32) -> Option<Out> {
+    // Returns true if point belongs to an arc blend
+    pub fn tp(&self, t: f32) -> Option<(Out, bool)> {
         if t > self.total_time || t < 0.0 {
             return None;
         }
@@ -176,8 +177,8 @@ impl Trajectory {
         // TODO: Filter by start time first. Calling `tp` on every segment until we get a `Some` is
         // hilariously bad.
         self.items.iter().find_map(|item| match item {
-            Item::Linear(line) => line.tp(t).map(|out| out.0),
-            Item::ArcBlend(blend) => blend.tp(t),
+            Item::Linear(line) => line.tp(t).map(|out| (out.0, false)),
+            Item::ArcBlend(blend) => blend.tp(t).map(|t| (t, true)),
         })
     }
 }
