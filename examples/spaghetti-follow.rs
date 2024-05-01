@@ -107,6 +107,7 @@ fn main() {
             }
         }
 
+        // Uncomment to draw lines between desired path points
         // for [a, b] in state
         //     .trajectory
         //     .points
@@ -139,6 +140,7 @@ fn main() {
             Item::ArcBlend(blend) => Some(blend),
         });
 
+        // Draw blend arcs using a bunch of line segments for each one
         for blend in blends {
             let mut prev_point =
                 Point3::new(blend.arc_start.x, blend.arc_start.y, blend.arc_start.z);
@@ -166,8 +168,8 @@ fn main() {
             }
         }
 
-        continue;
-
+        // Draw straight trajectory segments using output of planner
+        // FIXME
         let n_points = 500u16;
         let mut prev_point =
             Point3::from(*state.trajectory.points.first().expect("Empty trajectory"));
