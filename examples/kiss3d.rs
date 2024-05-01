@@ -1,5 +1,5 @@
 use kiss3d::ncollide3d;
-use kiss3d::renderer::{LineRenderer, Renderer};
+
 use kiss3d::window::Window;
 use kiss3d::{camera::ArcBall, light::Light};
 use nalgebra::{Point3, Translation3, UnitQuaternion, Vector3};

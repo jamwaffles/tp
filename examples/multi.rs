@@ -6,7 +6,7 @@ use gtk::prelude::*;
 use plotters::prelude::*;
 use plotters::style::full_palette;
 use plotters_cairo::CairoBackend;
-use tp::trapezoidal::{make_segments, tp, tp_seg, Lim};
+use tp::trapezoidal::{make_segments, tp_seg, Lim};
 
 const GLADE_UI_SOURCE: &'static str = include_str!("multi.glade");
 

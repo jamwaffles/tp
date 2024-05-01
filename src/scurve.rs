@@ -114,9 +114,9 @@ impl Segment {
         } = lim;
 
         // Symmetrical profiles for now
-        let vmin = -vmax;
-        let amin = -amax;
-        let jmin = -jmax;
+        let _vmin = -vmax;
+        let _amin = -amax;
+        let _jmin = -jmax;
 
         let max_accel_not_reached = (vmax - v0) * jmax < amax.powi(2);
         let max_decel_not_reached = (vmax - v1) * jmax < amax.powi(2);
@@ -239,8 +239,8 @@ impl Segment {
         } = lim;
 
         // Symmetrical profiles for now
-        let vmin = -vmax;
-        let amin = -amax;
+        let _vmin = -vmax;
+        let _amin = -amax;
         let jmin = -jmax;
 
         // Accel phase, max jerk

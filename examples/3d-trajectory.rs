@@ -45,7 +45,7 @@ fn main() {
     #[cfg(not(target_os = "macos"))]
     window.set_line_width(2.0);
 
-    let mut state = State { p1, p2, lim, seg };
+    let state = State { p1, p2, lim, seg };
 
     while window.render_with_camera(&mut arc_ball) {
         for event in window.events().iter() {
@@ -91,11 +91,11 @@ fn main() {
         for t in 0..100u16 {
             let t = f32::from(t) / (f32::from(points) / state.seg.total_time);
 
-            let (Out { pos, acc, vel }, phase) = state.seg.tp(t).unwrap();
+            let (Out { pos, acc, vel: _ }, phase) = state.seg.tp(t).unwrap();
 
             let pos_point = Point3::new(pos.x, pos.y, pos.z);
 
-            let a = acc.norm();
+            let _a = acc.norm();
 
             let colour = match phase {
                 Phase::Accel => Point3::new(1.0, 0.0, 0.0),
