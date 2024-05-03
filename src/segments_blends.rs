@@ -63,16 +63,16 @@ impl Trajectory {
                 //     self.limits,
                 // );
 
-                // let segment = Segment::new(
-                //     self.points[0],
-                //     new_point,
-                //     Coord3::zeros(),
-                //     Coord3::zeros(),
-                //     0.0,
-                //     &self.limits,
-                // );
+                let segment = Segment::new(
+                    self.points[0],
+                    new_point,
+                    Coord3::zeros(),
+                    Coord3::zeros(),
+                    0.0,
+                    &self.limits,
+                );
 
-                // self.items.push(Item::Linear(segment));
+                self.items.push(Item::Linear(segment));
             }
             // 3 points is a properly computed blend and two segments (one new)
             2 => {
