@@ -132,7 +132,8 @@ impl ArcBlend {
             arc_radius,
             arc_len,
             velocity_limit,
-            time: velocity_limit.norm() * arc_len,
+            // Ensure time can never be negative. This can occur for extremely small arc angles
+            time: (velocity_limit.norm() * arc_len).max(0.0),
             start_t,
         }
     }

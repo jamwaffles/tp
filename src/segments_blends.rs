@@ -74,40 +74,43 @@ impl Trajectory {
 
                 self.items.push(Item::Linear(segment));
             }
-            // 3 points is a properly computed blend and two segments (one new)
-            2 => {
-                let &[prev, mid] = self.points.as_slice() else {
-                    panic!("Last item should be a linear segment");
-                };
+            // // 3 points is a properly computed blend and two segments (one new)
+            // 2 => {
+            //     let Some(Item::Linear(prev_segment)) = self.items.last_mut() else {
+            //         panic!("Last item should be a linear segment");
+            //     };
 
-                let mut blend =
-                    ArcBlend::new(prev, mid, new_point, self.max_deviation, 0.0, self.limits);
+            //     let prev = prev_segment.q0();
+            //     let mid = prev_segment.q1();
 
-                let prev_segment = Segment::new(
-                    prev,
-                    blend.arc_start,
-                    Coord3::zeros(),
-                    Coord3::zeros(),
-                    0.0,
-                    &self.limits,
-                );
+            //     let mut blend =
+            //         ArcBlend::new(prev, mid, new_point, self.max_deviation, 0.0, self.limits);
 
-                blend.start_t = prev_segment.total_time;
+            //     // let prev_segment = Segment::new(
+            //     //     prev,
+            //     //     blend.arc_start,
+            //     //     Coord3::zeros(),
+            //     //     Coord3::zeros(),
+            //     //     0.0,
+            //     //     &self.limits,
+            //     // );
 
-                let segment = Segment::new(
-                    blend.arc_end,
-                    new_point,
-                    Coord3::zeros(),
-                    Coord3::zeros(),
-                    // Start second segment after blend
-                    blend.start_t + blend.time,
-                    &self.limits,
-                );
+            //     blend.start_t = prev_segment.total_time;
 
-                self.items.push(Item::Linear(prev_segment));
-                self.items.push(Item::ArcBlend(blend));
-                self.items.push(Item::Linear(segment));
-            }
+            //     let segment = Segment::new(
+            //         blend.arc_end,
+            //         new_point,
+            //         Coord3::zeros(),
+            //         Coord3::zeros(),
+            //         // Start second segment after blend
+            //         blend.start_t + blend.time,
+            //         &self.limits,
+            //     );
+
+            //     // self.items.push(Item::Linear(prev_segment));
+            //     self.items.push(Item::ArcBlend(blend));
+            //     self.items.push(Item::Linear(segment));
+            // }
             // More than 3 points and we have multiple blends
             _ => {
                 let Some(Item::Linear(last_segment)) = self.items.last_mut() else {

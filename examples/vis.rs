@@ -7,6 +7,7 @@ use egui::{Color32, TextStyle, Ui};
 use egui_extras::{Column, TableBuilder};
 use egui_extras::{Size, StripBuilder};
 use egui_plot::{Legend, Line, LineStyle, Plot, PlotPoints, VLine};
+use env_logger::Env;
 use nalgebra::{Point3, Translation3, UnitQuaternion, Vector3};
 use std::{path::PathBuf, sync::Arc, thread, time::Duration};
 use tp::arc_blend::Coord3;
@@ -199,7 +200,7 @@ impl eframe::App for MyApp {
 }
 
 fn main() -> Result<(), eframe::Error> {
-    env_logger::init();
+    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
 
     let native_options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
@@ -212,6 +213,9 @@ fn main() -> Result<(), eframe::Error> {
 
     trajectory.push_point(Coord3::new(0.0, 0.0, 0.0));
     trajectory.push_point(Coord3::new(5.0, 0.0, 0.0));
+    trajectory.push_point(Coord3::new(1.0, 0.0, 0.0));
+
+    log::info!("Duration {}", trajectory.total_time);
 
     eframe::run_native(
         "Visualiser",

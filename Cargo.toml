@@ -31,6 +31,7 @@ plotters = { git = "https://github.com/plotters-rs/plotters.git", default_featur
 # Cairo 0.17 upgrade
 plotters-cairo = { git = "https://github.com/plotters-rs/plotters-cairo.git", rev = "515ab36f59ff28f1c0db7d98b410d51a7bbf9677" }
 env_logger = "0.11.3"
+log = "0.4.21"
 
 [dev-dependencies]
 cairo-rs = "0.17.0"

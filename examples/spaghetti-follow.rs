@@ -29,9 +29,15 @@ fn main() {
     let mut trajectory = Trajectory::new();
 
     // Generate random points on every run
-    for _ in 0..10 {
-        trajectory.push_point((Coord3::new_random() * range).map(|axis| axis - (range / 2.0)));
-    }
+    // for _ in 0..3 {
+    //     trajectory.push_point((Coord3::new_random() * range).map(|axis| axis - (range / 2.0)));
+    // }
+
+    trajectory.push_point(Coord3::new(0.0, 0.0, 0.0));
+    trajectory.push_point(Coord3::new(5.0, 0.0, 0.0));
+    trajectory.push_point(Coord3::new(1.0, 0.0001, 0.0));
+
+    println!("Total duration {} s", trajectory.total_time);
 
     let mut window = Window::new("Spaghetti!");
 
@@ -54,7 +60,7 @@ fn main() {
         match item {
             Item::Linear(line) => {
                 println!(
-                    "Linear   start {}, duration {} from {}, {}, {} -> {}, {}, {}",
+                    "Linear   start {}, duration {} from [{}, {}, {}] -> [{}, {}, {}]",
                     line.start_t,
                     line.total_time,
                     line.q0().x,
@@ -67,7 +73,7 @@ fn main() {
             }
             Item::ArcBlend(blend) => {
                 println!(
-                    "ArcBlend start {}, duration {}, midpoint {}, {}, {}",
+                    "ArcBlend start {}, duration {}, midpoint [{}, {}, {}]",
                     blend.start_t, blend.time, blend.mid.x, blend.mid.y, blend.mid.z,
                 )
             }
@@ -163,11 +169,14 @@ fn main() {
 
                 let t = t + blend.start_t;
 
-                let Out {
+                let Some(Out {
                     pos,
                     acc: _,
                     vel: _,
-                } = blend.tp(t).unwrap();
+                }) = blend.tp(t)
+                else {
+                    continue;
+                };
 
                 let pos_point = Point3::new(pos.x, pos.y, pos.z);
 
@@ -195,6 +204,18 @@ fn main() {
                 },
                 is_arc,
             ) = state.trajectory.tp(t).expect("Out of bounds");
+
+            // let Some((
+            //     Out {
+            //         pos,
+            //         acc: _,
+            //         vel: _,
+            //     },
+            //     is_arc,
+            // )) = state.trajectory.tp(t)
+            // else {
+            //     continue;
+            // };
 
             let pos = Point3::from(pos);
 
