@@ -131,7 +131,9 @@ impl Trajectory {
                     last_segment.q0(),
                     blend.arc_start,
                     last_segment.v0(),
-                    last_segment.v1(),
+                    // Final velocity of previous segment is now the blend start velocity.
+                    // Acceleration will be discontinuous.
+                    blend.tp(blend.start_t).unwrap().vel,
                     last_segment.start_t,
                     &self.limits,
                 );
@@ -154,7 +156,9 @@ impl Trajectory {
                 self.items.push(Item::Linear(Segment::new(
                     blend.arc_end,
                     new_point,
-                    Coord3::zeros(),
+                    // Start velocity of new segment is the same as the end velocity of the blend
+                    // arc
+                    blend.tp(blend.time).unwrap().vel,
                     Coord3::zeros(),
                     blend.start_t + blend.time,
                     &self.limits,
