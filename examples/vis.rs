@@ -3,7 +3,7 @@
 
 use eframe::egui;
 use egui::epaint::Hsva;
-use egui::{Color32, TextStyle, Ui};
+use egui::{Color32, Stroke, TextStyle, Ui};
 use egui_extras::{Column, TableBuilder};
 use egui_extras::{Size, StripBuilder};
 use egui_plot::{Legend, Line, LineStyle, Plot, PlotPoints, VLine};
@@ -81,52 +81,50 @@ impl MyApp {
 
     fn chart(&mut self, heading_text_size: f32, ui: &mut Ui) {
         StripBuilder::new(ui)
-            // Heading
-            .size(Size::exact(heading_text_size))
-            // Chart
+            // Charts
+            .size(Size::remainder())
+            .size(Size::remainder())
             .size(Size::remainder())
             .vertical(|mut strip| {
+                let n_points = 500u16;
+
+                let mut points = Vec::new();
+
+                for t in 0..n_points {
+                    let t = f32::from(t) / (f32::from(n_points) / self.trajectory.total_time);
+
+                    let Some((out, _is_arc)) = self.trajectory.tp(t) else {
+                        continue;
+                    };
+
+                    points.push((f64::from(t), out));
+                }
+
+                let verticals = self
+                    .trajectory
+                    .items
+                    .iter()
+                    .map(|item| match item {
+                        Item::Linear(line) => [
+                            (line.start_t, false),
+                            (line.start_t + line.total_time, false),
+                        ],
+                        Item::ArcBlend(blend) => {
+                            [(blend.start_t, true), (blend.start_t + blend.time, true)]
+                        }
+                    })
+                    .flatten()
+                    .collect::<Vec<_>>();
+
+                let verticals_x = verticals.clone();
+                let verticals_y = verticals.clone();
+
+                // X axis
                 strip.cell(|ui| {
-                    ui.heading("Trajectory plot");
-                });
-                strip.cell(|ui| {
-                    let n_points = 500u16;
-
-                    let mut points = Vec::new();
-
-                    for t in 0..n_points {
-                        let t = f32::from(t) / (f32::from(n_points) / self.trajectory.total_time);
-
-                        let Some((out, _is_arc)) = self.trajectory.tp(t) else {
-                            continue;
-                        };
-
-                        points.push((f64::from(t), out));
-                    }
-
                     Plot::new("trajectory_x")
                         .x_axis_label("Time")
-                        // .y_axis_label("Value")
                         .legend(Legend::default())
                         .show(ui, |plot_ui| {
-                            // let bounds = self.compute_bounds(plot_ui);
-
-                            // let mut points = Vec::new();
-
-                            // for t in 0..n_points {
-                            //     let t = f32::from(t)
-                            //         / (f32::from(n_points) / self.trajectory.total_time);
-
-                            //     let Some((Out { pos, acc, vel }, _is_arc)) = self.trajectory.tp(t)
-                            //     else {
-                            //         continue;
-                            //     };
-
-                            //     points.push([f64::from(t), f64::from(pos.x)]);
-                            // }
-
-                            // let points = self.aggregate(bounds, &points);
-
                             let pos = points
                                 .iter()
                                 .map(|(t, out)| [*t, f64::from(out.pos.x)])
@@ -141,6 +139,136 @@ impl MyApp {
                                 .iter()
                                 .map(|(t, out)| [*t, f64::from(out.acc.x)])
                                 .collect::<Vec<_>>();
+
+                            for (v, is_blend) in verticals_x {
+                                plot_ui.vline(
+                                    VLine::new(v)
+                                        .style(if is_blend {
+                                            LineStyle::dashed_dense()
+                                        } else {
+                                            LineStyle::dashed_loose()
+                                        })
+                                        .color(if is_blend {
+                                            Color32::YELLOW
+                                        } else {
+                                            Color32::GRAY
+                                        }),
+                                );
+                            }
+
+                            plot_ui.line(
+                                Line::new(PlotPoints::new(pos))
+                                    .color(idx_to_colour(0))
+                                    .name("Position"),
+                            );
+
+                            plot_ui.line(
+                                Line::new(PlotPoints::new(vel))
+                                    .color(idx_to_colour(1))
+                                    .name("Velocity"),
+                            );
+
+                            plot_ui.line(
+                                Line::new(PlotPoints::new(acc))
+                                    .color(idx_to_colour(2))
+                                    .name("Acceleration"),
+                            );
+                        });
+                });
+
+                // Y axis
+                strip.cell(|ui| {
+                    Plot::new("trajectory_y")
+                        .x_axis_label("Time")
+                        .legend(Legend::default())
+                        .show(ui, |plot_ui| {
+                            let pos = points
+                                .iter()
+                                .map(|(t, out)| [*t, f64::from(out.pos.y)])
+                                .collect::<Vec<_>>();
+
+                            let vel = points
+                                .iter()
+                                .map(|(t, out)| [*t, f64::from(out.vel.y)])
+                                .collect::<Vec<_>>();
+
+                            let acc = points
+                                .iter()
+                                .map(|(t, out)| [*t, f64::from(out.acc.y)])
+                                .collect::<Vec<_>>();
+
+                            for (v, is_blend) in verticals_y {
+                                plot_ui.vline(
+                                    VLine::new(v)
+                                        .style(if is_blend {
+                                            LineStyle::dashed_dense()
+                                        } else {
+                                            LineStyle::dashed_loose()
+                                        })
+                                        .color(if is_blend {
+                                            Color32::YELLOW
+                                        } else {
+                                            Color32::GRAY
+                                        }),
+                                );
+                            }
+
+                            plot_ui.line(
+                                Line::new(PlotPoints::new(pos))
+                                    .color(idx_to_colour(0))
+                                    .name("Position"),
+                            );
+
+                            plot_ui.line(
+                                Line::new(PlotPoints::new(vel))
+                                    .color(idx_to_colour(1))
+                                    .name("Velocity"),
+                            );
+
+                            plot_ui.line(
+                                Line::new(PlotPoints::new(acc))
+                                    .color(idx_to_colour(2))
+                                    .name("Acceleration"),
+                            );
+                        });
+                });
+
+                // Z axis
+                strip.cell(|ui| {
+                    Plot::new("trajectory_z")
+                        .x_axis_label("Time")
+                        .legend(Legend::default())
+                        .show(ui, |plot_ui| {
+                            let pos = points
+                                .iter()
+                                .map(|(t, out)| [*t, f64::from(out.pos.z)])
+                                .collect::<Vec<_>>();
+
+                            let vel = points
+                                .iter()
+                                .map(|(t, out)| [*t, f64::from(out.vel.z)])
+                                .collect::<Vec<_>>();
+
+                            let acc = points
+                                .iter()
+                                .map(|(t, out)| [*t, f64::from(out.acc.z)])
+                                .collect::<Vec<_>>();
+
+                            for (v, is_blend) in verticals {
+                                plot_ui.vline(
+                                    VLine::new(v)
+                                        .style(if is_blend {
+                                            LineStyle::dashed_dense()
+                                        } else {
+                                            LineStyle::dashed_loose()
+                                        })
+                                        .color(if is_blend {
+                                            Color32::YELLOW
+                                        } else {
+                                            Color32::GRAY
+                                        }),
+                                );
+                            }
 
                             plot_ui.line(
                                 Line::new(PlotPoints::new(pos))
@@ -167,25 +295,26 @@ impl MyApp {
 
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        egui::SidePanel::left("left_panel")
-            // .resizable(true)
-            .default_width(200.0)
-            // .width_range(200.0..=500.0)
-            .show(ctx, |ui| {
-                // ui.vertical_centered(|ui| {
-                ui.heading("TODO");
-                // });
+        // egui::SidePanel::left("left_panel")
+        //     // .resizable(true)
+        //     .default_width(200.0)
+        //     // .width_range(200.0..=500.0)
+        //     .show(ctx, |ui| {
+        //         // ui.vertical_centered(|ui| {
+        //         ui.heading("TODO");
+        //         // });
 
-                // egui::ScrollArea::vertical().show(ui, |ui| {
-                //     self.file_list(ui);
-                // });
-            });
+        //         // egui::ScrollArea::vertical().show(ui, |ui| {
+        //         //     self.file_list(ui);
+        //         // });
+        //     });
+
+        // egui::CentralPanel::default().show(ctx, |ui| {
+        //     // if ui.button("Save Plot").clicked() {
+        //     //     ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot);
+        //     // }
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            // if ui.button("Save Plot").clicked() {
-            //     ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot);
-            // }
-
             let heading_text_size = TextStyle::Heading.resolve(ui.style()).size;
 
             StripBuilder::new(ui)
@@ -212,8 +341,8 @@ fn main() -> Result<(), eframe::Error> {
     let mut trajectory = Trajectory::new();
 
     trajectory.push_point(Coord3::new(0.0, 0.0, 0.0));
-    trajectory.push_point(Coord3::new(5.0, 0.0, 0.0));
-    trajectory.push_point(Coord3::new(1.0, 0.0, 0.0));
+    trajectory.push_point(Coord3::new(5.0, 1.0, -1.0));
+    trajectory.push_point(Coord3::new(1.0, 2.0, -5.0));
 
     log::info!("Duration {}", trajectory.total_time);
 
