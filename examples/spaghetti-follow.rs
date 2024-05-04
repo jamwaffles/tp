@@ -29,13 +29,9 @@ fn main() {
     let mut trajectory = Trajectory::new();
 
     // Generate random points on every run
-    // for _ in 0..3 {
-    //     trajectory.push_point((Coord3::new_random() * range).map(|axis| axis - (range / 2.0)));
-    // }
-
-    trajectory.push_point(Coord3::new(0.0, 0.0, 0.0));
-    trajectory.push_point(Coord3::new(5.0, 0.0, 0.0));
-    trajectory.push_point(Coord3::new(1.0, 0.0001, 0.0));
+    for _ in 0..10 {
+        trajectory.push_point((Coord3::new_random() * range).map(|axis| axis - (range / 2.0)));
+    }
 
     println!("Total duration {} s", trajectory.total_time);
 

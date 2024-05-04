@@ -111,7 +111,7 @@ impl Trajectory {
             //     self.items.push(Item::ArcBlend(blend));
             //     self.items.push(Item::Linear(segment));
             // }
-            // More than 3 points and we have multiple blends
+            // 3 or more points and we have a blend between the last and the newly added segment
             _ => {
                 let Some(Item::Linear(last_segment)) = self.items.last_mut() else {
                     panic!("Last item should be a linear segment");
@@ -141,9 +141,12 @@ impl Trajectory {
                 // Update previous segment's end position to be start of new blend.
                 *last_segment = prev_segment_replace;
 
-                // Add a new blend between previous linear segment and this new one.
-                // self.blends.push(blend);
-                self.items.push(Item::ArcBlend(blend));
+                // If segments are not colinear, add a new blend between previous linear segment and
+                // this new one.
+                // TODO: Merge colinear line segments
+                if !blend.is_colinear {
+                    self.items.push(Item::ArcBlend(blend));
+                }
 
                 // Finally push new segment, starting at end of new blend arc
                 // TODO: Non-zero velocity

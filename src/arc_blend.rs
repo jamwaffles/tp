@@ -25,6 +25,7 @@ pub struct ArcBlend {
     pub velocity_limit: Coord3,
     pub time: f32,
     pub start_t: f32,
+    pub is_colinear: bool,
     // Actual deviation from the midpoint
     // deviation: f32
 }
@@ -41,6 +42,29 @@ impl ArcBlend {
             vel: max_velocity,
         }: Lim,
     ) -> Self {
+        let v1 = mid - prev;
+        let v2 = next - mid;
+
+        let is_colinear = v1.cross(&v2).norm_squared() <= f32::EPSILON;
+
+        if is_colinear {
+            return Self {
+                prev,
+                mid,
+                next,
+                max_deviation,
+                arc_start: mid,
+                arc_center: mid,
+                arc_radius: 0.0,
+                arc_end: mid,
+                arc_len: 0.0,
+                velocity_limit: max_velocity,
+                time: 0.0,
+                start_t,
+                is_colinear,
+            };
+        }
+
         // Qi
         let prev_delta: Vector3<f32> = mid - prev;
         // Qi+1
@@ -135,6 +159,7 @@ impl ArcBlend {
             // Ensure time can never be negative. This can occur for extremely small arc angles
             time: (velocity_limit.norm() * arc_len).max(0.0),
             start_t,
+            is_colinear,
         }
     }
 
