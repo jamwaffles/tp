@@ -79,14 +79,14 @@ impl MyApp {
             .collect::<Vec<_>>()
     }
 
-    fn chart(&mut self, heading_text_size: f32, ui: &mut Ui) {
+    fn chart(&mut self, _heading_text_size: f32, ui: &mut Ui) {
         StripBuilder::new(ui)
             // Charts
             .size(Size::remainder())
             .size(Size::remainder())
             .size(Size::remainder())
             .vertical(|mut strip| {
-                let n_points = 500u16;
+                let n_points = 5000u16;
 
                 let mut points = Vec::new();
 
