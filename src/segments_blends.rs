@@ -121,6 +121,7 @@ impl Trajectory {
                 let mid = last_segment.q1();
                 let next = new_point;
 
+                // TODO: Non-zero initial/final velocities
                 let mut blend =
                     ArcBlend::new(prev, mid, next, self.max_deviation, 0.0, self.limits);
 
