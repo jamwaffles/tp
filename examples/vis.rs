@@ -342,7 +342,7 @@ fn main() -> Result<(), eframe::Error> {
 
     trajectory.push_point(Coord3::new(0.0, 0.0, 0.0));
     trajectory.push_point(Coord3::new(5.0, 0.0, 0.0));
-    trajectory.push_point(Coord3::new(10.0, 1.0, 0.0));
+    trajectory.push_point(Coord3::new(5.0, 2.0, 0.0));
 
     log::info!("Duration {}", trajectory.total_time);
 

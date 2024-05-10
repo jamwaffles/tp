@@ -28,10 +28,14 @@ fn main() {
 
     let mut trajectory = Trajectory::new();
 
-    // Generate random points on every run
-    for _ in 0..10 {
-        trajectory.push_point((Coord3::new_random() * range).map(|axis| axis - (range / 2.0)));
-    }
+    trajectory.push_point(Coord3::new(0.0, 0.0, 0.0));
+    trajectory.push_point(Coord3::new(5.0, 0.0, 0.0));
+    trajectory.push_point(Coord3::new(5.0, 2.0, 0.0));
+
+    // // Generate random points on every run
+    // for _ in 0..10 {
+    //     trajectory.push_point((Coord3::new_random() * range).map(|axis| axis - (range / 2.0)));
+    // }
 
     println!("Total duration {} s", trajectory.total_time);
 
@@ -185,7 +189,7 @@ fn main() {
         }
 
         // Draw straight trajectory segments using output of planner
-        let n_points = 500u16;
+        let n_points = 100u16;
         let mut prev_point =
             Point3::from(*state.trajectory.points.first().expect("Empty trajectory"));
 
@@ -194,26 +198,14 @@ fn main() {
 
             let (
                 Out {
-                    pos,
-                    acc: _,
-                    vel: _,
+                    pos: pos_orig,
+                    acc: acc_orig,
+                    vel: vel_orig,
                 },
                 is_arc,
             ) = state.trajectory.tp(t).expect("Out of bounds");
 
-            // let Some((
-            //     Out {
-            //         pos,
-            //         acc: _,
-            //         vel: _,
-            //     },
-            //     is_arc,
-            // )) = state.trajectory.tp(t)
-            // else {
-            //     continue;
-            // };
-
-            let pos = Point3::from(pos);
+            let pos = Point3::from(pos_orig);
 
             let colour = if is_arc {
                 Point3::new(0.0, 1.0, 1.0)
@@ -222,6 +214,18 @@ fn main() {
             };
 
             window.draw_line(&prev_point, &pos, &colour);
+
+            window.draw_line(
+                &pos,
+                &Point3::from(pos_orig + acc_orig.normalize()),
+                &Point3::new(1.0, 0.0, 0.0),
+            );
+
+            window.draw_line(
+                &pos,
+                &Point3::from(pos_orig + vel_orig.normalize()),
+                &Point3::new(0.0, 1.0, 0.0),
+            );
 
             prev_point = pos;
         }
