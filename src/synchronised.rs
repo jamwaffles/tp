@@ -1,0 +1,268 @@
+//! A single segment with synchronised axes.
+
+use nalgebra::Vector3;
+
+pub type Coord3 = Vector3<f32>;
+
+#[derive(Default, Debug, Clone, Copy, PartialEq)]
+pub struct Lim {
+    pub vel: Coord3,
+    pub acc: Coord3,
+}
+
+#[derive(Debug, Default, Clone, Copy)]
+pub struct Out {
+    pub pos: Coord3,
+    pub vel: Coord3,
+    pub acc: Coord3,
+}
+
+impl core::ops::Add for Out {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Self {
+            pos: self.pos + rhs.pos,
+            vel: self.vel + rhs.vel,
+            acc: self.acc + rhs.acc,
+        }
+    }
+}
+
+// #[derive(Debug, Default, Clone, Copy)]
+// pub struct Times {
+//     pub t_j1: f32,
+//     pub t_j2: f32,
+//     pub t_d: f32,
+//     pub t_a: f32,
+//     pub t_v: f32,
+//     pub total_time: f32,
+// }
+
+#[derive(Debug, Default)]
+pub struct Segment {
+    /// Start time of this segment.
+    pub start_t: f32,
+    /// Initial position.
+    q0: Coord3,
+    /// Final position.
+    q1: Coord3,
+    /// Initial velocity.
+    v0: Coord3,
+    /// Final velocity.
+    v1: Coord3,
+
+    /// Total time.
+    pub total_time: f32,
+
+    /// Acceleration time.
+    t_a: f32,
+
+    /// Deceleration time.
+    t_d: f32,
+
+    /// Maximum velocity and acceleration for each axis.
+    lim: Lim,
+
+    /// Sign of displacement.
+    sign: Coord3,
+}
+
+impl Segment {
+    pub fn new(q0: Coord3, q1: Coord3, v0: Coord3, v1: Coord3, start_t: f32, lim: &Lim) -> Self {
+        assert!(
+            lim.acc > Coord3::zeros() && lim.vel > Coord3::zeros(),
+            "Limits must all be positive values, got {:?}",
+            lim
+        );
+
+        // FIXME: Non-zero :(
+        let v0 = Coord3::zeros();
+        let v1 = Coord3::zeros();
+
+        let sign = (q1 - q0).map(|axis| axis.signum());
+        // let sign = Coord3::new(1.0, 1.0, 1.0);
+
+        let q0 = q0.component_mul(&sign);
+        let q1 = q1.component_mul(&sign);
+        let v0 = v0.component_mul(&sign);
+        let v1 = v1.component_mul(&sign);
+
+        // Displacement
+        let h = q1 - q0;
+
+        // TODO: Also check for the slowest one as opposed to the largest displacement
+        let largest_axis = h.abs().imax();
+
+        // Section 3.2.2: Preassigned acceleration and velocity
+        let preassigned_acc_vel = |axis: usize, limits: &Lim| {
+            let h = h[axis];
+            let a_max = limits.acc[axis];
+            let mut v_max = limits.vel[axis];
+            let v0 = v0[axis];
+            let v1 = v1[axis];
+
+            let mut t_a = v_max / a_max;
+
+            let mut t = (h * a_max + v_max.powi(2)) / (a_max * v_max);
+
+            let has_linear_segment = h >= v_max.powi(2) / a_max;
+
+            if !has_linear_segment {
+                t_a = f32::sqrt(h / a_max);
+                t = 2.0 * t_a;
+                v_max = h / t_a;
+            }
+
+            (t_a, t, v_max)
+        };
+
+        // Book section 3.2.2: Compute accel period Ta and total duration T for axis with largest
+        // displacement.
+        let (largest_axis_accel_time, largest_axis_total_time, largest_axis_v_max) =
+            preassigned_acc_vel(largest_axis, &lim);
+
+        dbg!(
+            largest_axis_accel_time,
+            largest_axis_total_time,
+            largest_axis_v_max
+        );
+
+        // Compute new limits based on largest axis. This synchronises all other axes.
+        let lim = Lim {
+            vel: h / (largest_axis_total_time - largest_axis_accel_time),
+            acc: h
+                / (largest_axis_accel_time * (largest_axis_total_time - largest_axis_accel_time)),
+        };
+
+        dbg!(lim);
+
+        Self {
+            start_t,
+            q0,
+            q1,
+            v0,
+            v1,
+            total_time: largest_axis_total_time,
+            t_a: largest_axis_accel_time,
+            // TODO: Separate decel time
+            t_d: largest_axis_accel_time,
+            sign,
+            lim,
+        }
+    }
+
+    /// Get trajectory parameters at the given time `t`.
+    pub fn tp(&self, t: f32) -> Option<(Out, Phase)> {
+        let Self {
+            q0,
+            q1,
+            v0,
+            v1,
+            t_a,
+            t_d,
+            total_time,
+            start_t,
+            lim,
+            ..
+        } = *self;
+
+        let t0 = start_t;
+        let t1 = t0 + total_time;
+        let t_delta = t - t0;
+        let vlim = lim.vel;
+
+        let mut phase = Phase::Accel;
+
+        // Accel (3.13a)
+        let out = if t_delta < t_a {
+            phase = Phase::Accel;
+
+            Some(Out {
+                pos: q0 + v0 * (t - t0) + (vlim - v0) / (2.0 * t_a) * (t - t0).powi(2),
+                vel: v0 + (vlim - v0) / t_a * (t - t0),
+                acc: (vlim - v0) / t_a,
+            })
+        }
+        // Coast (3.13b)
+        else if t_delta < (total_time - t_d) {
+            phase = Phase::Cruise;
+
+            Some(Out {
+                pos: q0 + v0 * t_a / 2.0 + vlim * (t - t0 - t_a / 2.0),
+                vel: vlim,
+                acc: Coord3::zeros(),
+            })
+        }
+        // Decel (3.13c) (non-inclusive)
+        else if t_delta <= total_time {
+            phase = Phase::Decel;
+
+            Some(Out {
+                pos: q1 - v1 * (t1 - t) - (vlim - v1) / (2.0 * t_d) * (t1 - t).powi(2),
+                vel: v1 + (vlim - v1) / t_d * (t1 - t),
+                acc: -(vlim - v1) / t_d,
+            })
+        }
+        // Out of range
+        else {
+            None
+        };
+
+        out.map(|out| {
+            (
+                Out {
+                    pos: out.pos.component_mul(&self.sign),
+                    vel: out.vel.component_mul(&self.sign),
+                    acc: out.acc.component_mul(&self.sign),
+                },
+                phase,
+            )
+        })
+    }
+
+    pub fn q0(&self) -> Coord3 {
+        self.q0.component_mul(&self.sign)
+    }
+
+    pub fn q1(&self) -> Coord3 {
+        self.q1.component_mul(&self.sign)
+    }
+
+    pub fn v0(&self) -> Coord3 {
+        self.v0.component_mul(&self.sign)
+    }
+
+    pub fn v1(&self) -> Coord3 {
+        self.v1.component_mul(&self.sign)
+    }
+}
+
+pub enum Phase {
+    Accel,
+    Cruise,
+    Decel,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn book_example_3_3() {
+        let q0 = Coord3::new(0.0, 00.0, 0.0);
+        let q1 = Coord3::new(50.0, -40.0, 20.0);
+
+        let v0 = Coord3::new(0.0, 0.0, 0.0);
+        let v1 = Coord3::new(0.0, 0.0, 0.0);
+
+        let lim = Lim {
+            vel: Coord3::new(20.0, 20.0, 20.0),
+            acc: Coord3::new(20.0, 20.0, 20.0),
+        };
+
+        let seg = Segment::new(q0, q1, v0, v1, 0.0, &lim);
+
+        dbg!(seg);
+    }
+}
