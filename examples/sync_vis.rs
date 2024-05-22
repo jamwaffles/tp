@@ -178,7 +178,7 @@ impl eframe::App for MyApp {
 }
 
 fn main() -> Result<(), eframe::Error> {
-    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+    env_logger::Builder::from_env(Env::default().default_filter_or("sync_vis=info")).init();
 
     let native_options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()

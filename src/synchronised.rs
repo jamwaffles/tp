@@ -76,10 +76,6 @@ impl Segment {
             lim
         );
 
-        // FIXME: Non-zero :(
-        let v0 = Coord3::zeros();
-        let v1 = Coord3::zeros();
-
         let sign = (q1 - q0).map(|axis| axis.signum());
         // let sign = Coord3::new(1.0, 1.0, 1.0);
 
@@ -98,35 +94,54 @@ impl Segment {
         let preassigned_acc_vel = |axis: usize, limits: &Lim| {
             let h = h[axis];
             let a_max = limits.acc[axis];
-            let mut v_max = limits.vel[axis];
+            let v_max = limits.vel[axis];
             let v0 = v0[axis];
             let v1 = v1[axis];
 
-            let mut t_a = v_max / a_max;
+            // Was the given max velocity reached? If so, this segment will contain a cruise phase.
+            let v_lim_reached = {
+                let lhs = h * a_max;
 
-            let mut t = (h * a_max + v_max.powi(2)) / (a_max * v_max);
+                let rhs = v_max.powi(2) - (v0.powi(2) + v1.powi(2)) / 2.0;
 
-            let has_linear_segment = h >= v_max.powi(2) / a_max;
+                lhs > rhs
+            };
 
-            if !has_linear_segment {
-                t_a = f32::sqrt(h / a_max);
-                t = 2.0 * t_a;
-                v_max = h / t_a;
-            }
+            let vlim = if v_lim_reached {
+                // We reached max allowed velocity
+                v_max
+            } else {
+                // Didn't reach max velocity, so reduce it by how much acceleration we can get away with
+                f32::sqrt(h * a_max + (v0.powi(2) + v1.powi(2)) / 2.0)
+            };
 
-            (t_a, t, v_max)
+            // dbg!(v_lim_reached, h, a_max);
+
+            let t_a = (vlim - v0) / a_max;
+            let t_d = (vlim - v1) / a_max;
+
+            // Total duration of this segment
+            let total_time = if v_lim_reached {
+                h / v_max
+                    + v_max / (2.0 * a_max) * (1.0 - v0 / v_max).powi(2)
+                    + v_max / (2.0 * a_max) * (1.0 - v1 / v_max).powi(2)
+            } else {
+                // No cruise, so just sum accel + decel
+                t_a + t_d
+            };
+
+            // dbg!(v0, v1, a_max, t_a, t_d, total_time, vlim, h);
+            (t_a, t_d, total_time, vlim)
         };
 
         // Book section 3.2.2: Compute accel period Ta and total duration T for axis with largest
         // displacement.
-        let (largest_axis_accel_time, largest_axis_total_time, largest_axis_v_max) =
-            preassigned_acc_vel(largest_axis, &lim);
-
-        dbg!(
+        let (
             largest_axis_accel_time,
+            largest_axis_decel_time,
             largest_axis_total_time,
-            largest_axis_v_max
-        );
+            largest_axis_v_max,
+        ) = preassigned_acc_vel(largest_axis, &lim);
 
         // Compute new limits based on largest axis. This synchronises all other axes.
         let lim = Lim {
