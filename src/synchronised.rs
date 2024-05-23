@@ -61,8 +61,8 @@ pub struct Segment {
     /// Deceleration time.
     t_d: f32,
 
-    /// Maximum velocity and acceleration for each axis.
-    lim: Lim,
+    /// Maximum velocity for each axis.
+    vlim: Coord3,
 
     /// Sign of displacement.
     sign: Coord3,
@@ -163,7 +163,7 @@ impl Segment {
             // TODO: Separate decel time
             t_d: largest_axis_accel_time,
             sign,
-            lim,
+            vlim: lim.vel,
         }
     }
 
@@ -178,14 +178,13 @@ impl Segment {
             t_d,
             total_time,
             start_t,
-            lim,
+            vlim,
             ..
         } = *self;
 
         let t0 = start_t;
         let t1 = t0 + total_time;
         let t_delta = t - t0;
-        let vlim = lim.vel;
 
         let mut phase = Phase::Accel;
 
