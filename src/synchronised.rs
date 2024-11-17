@@ -87,10 +87,15 @@ impl Segment {
         // Displacement
         let h = q1 - q0;
 
-        // TODO: Also check for the slowest one as opposed to the largest displacement
-        let largest_axis = h.abs().imax();
+        // Velocity delta
+        let v_delta = v1 - v0;
 
-        // Section 3.2.2: Preassigned acceleration and velocity
+        // Largest axis, i.e. the one everything else will be adjusted against
+        let largest_axis = dbg!(h.component_div(&v_delta)).abs().imax();
+
+        dbg!(largest_axis);
+
+        // "Trajectory with preassigned acceleration and velocity", page 73
         let preassigned_acc_vel = |axis: usize, limits: &Lim| {
             let h = h[axis];
             let a_max = limits.acc[axis];
@@ -107,6 +112,7 @@ impl Segment {
                 lhs > rhs
             };
 
+            // Eq. (3.14)
             let vlim = if v_lim_reached {
                 // We reached max allowed velocity
                 v_max
@@ -144,13 +150,15 @@ impl Segment {
         ) = preassigned_acc_vel(largest_axis, &lim);
 
         // Compute new limits based on largest axis. This synchronises all other axes.
-        let lim = Lim {
-            vel: h / (largest_axis_total_time - largest_axis_accel_time),
-            acc: h
-                / (largest_axis_accel_time * (largest_axis_total_time - largest_axis_accel_time)),
-        };
+        let vlim = h / (largest_axis_total_time - largest_axis_accel_time);
 
-        dbg!(lim);
+        dbg!(
+            vlim,
+            largest_axis_accel_time,
+            largest_axis_decel_time,
+            largest_axis_total_time,
+            largest_axis_v_max
+        );
 
         Self {
             start_t,
@@ -160,10 +168,9 @@ impl Segment {
             v1,
             total_time: largest_axis_total_time,
             t_a: largest_axis_accel_time,
-            // TODO: Separate decel time
-            t_d: largest_axis_accel_time,
+            t_d: largest_axis_decel_time,
             sign,
-            vlim: lim.vel,
+            vlim,
         }
     }
 
@@ -260,6 +267,8 @@ pub enum Phase {
 
 #[cfg(test)]
 mod tests {
+    use float_cmp::assert_approx_eq;
+
     use super::*;
 
     #[test]
@@ -278,5 +287,55 @@ mod tests {
         let seg = Segment::new(q0, q1, v0, v1, 0.0, &lim);
 
         dbg!(seg);
+    }
+
+    // Single axis: ignore Y and Z
+    #[test]
+    fn book_example_3_7_a() {
+        let q0 = Coord3::new(0.0, 0.0, 0.0);
+        let q1 = Coord3::new(30.0, 0.0, 20.0);
+
+        let v0 = Coord3::new(5.0, 0.0, 0.0);
+        let v1 = Coord3::new(2.0, 0.0, 0.0);
+
+        let lim = Lim {
+            vel: Coord3::new(10.0, 10.0, 10.0),
+            acc: Coord3::new(10.0, 10.0, 10.0),
+        };
+
+        let seg = Segment::new(q0, q1, v0, v1, 0.0, &lim);
+
+        dbg!(&seg);
+
+        // FIXME: The constants are out of the book but are missing a few DP
+        assert_approx_eq!(f32, seg.vlim[0], lim.vel[0]);
+        assert_approx_eq!(f32, seg.t_a, 0.5);
+        assert_approx_eq!(f32, seg.t_d, 0.8);
+        assert_approx_eq!(f32, seg.total_time, 3.44);
+    }
+
+    // Single axis: ignore Y and Z
+    #[test]
+    fn book_example_3_7_b() {
+        let q0 = Coord3::new(0.0, 0.0, 0.0);
+        let q1 = Coord3::new(30.0, 0.0, 20.0);
+
+        let v0 = Coord3::new(5.0, 0.0, 0.0);
+        let v1 = Coord3::new(2.0, 0.0, 0.0);
+
+        let lim = Lim {
+            vel: Coord3::new(20.0, 20.0, 20.0),
+            acc: Coord3::new(10.0, 10.0, 10.0),
+        };
+
+        let seg = Segment::new(q0, q1, v0, v1, 0.0, &lim);
+
+        dbg!(&seg);
+
+        // FIXME: The constants are out of the book but are missing a few DP
+        assert_approx_eq!(f32, seg.vlim[0], 17.7);
+        assert_approx_eq!(f32, seg.t_a, 1.27);
+        assert_approx_eq!(f32, seg.t_d, 1.57);
+        assert_approx_eq!(f32, seg.total_time, 2.84);
     }
 }

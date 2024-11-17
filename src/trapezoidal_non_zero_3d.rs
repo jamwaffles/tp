@@ -89,6 +89,7 @@ impl Segment {
 
         let largest_axis = h.abs().imax();
 
+        // "Trajectory with preassigned acceleration and velocity", page 73
         let process_axis = |axis: usize, limits: &Lim| {
             let h = h[axis];
             let a_max = limits.acc[axis];
@@ -132,8 +133,6 @@ impl Segment {
             (t_a, t_d, total_time, vlim)
         };
 
-        // Book section 3.2.2: Compute accel period Ta and total duration T for axis with largest
-        // displacement.
         let (largest_axis_accel_time, largest_axis_decel_time, largest_axis_total_time, _) =
             process_axis(largest_axis, &lim);
 

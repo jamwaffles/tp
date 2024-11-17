@@ -187,15 +187,21 @@ fn main() -> Result<(), eframe::Error> {
         ..Default::default()
     };
 
-    let q0 = Coord3::new(0.0, 10.0, 0.0);
-    let q1 = Coord3::new(50.0, -40.0, 20.0);
+    // let q0 = Coord3::new(0.0, 10.0, 0.0);
+    // let q1 = Coord3::new(50.0, -40.0, 20.0);
 
-    let v0 = Coord3::new(0.0, 0.0, 0.0);
+    // let v0 = Coord3::new(5.0, 0.0, 0.0);
+    // let v1 = Coord3::new(0.0, 0.0, 0.0);
+
+    let q0 = Coord3::new(0.0, 0.0, 0.0);
+    let q1 = Coord3::new(50.0, 50.0, 20.0);
+
+    let v0 = Coord3::new(5.0, 0.0, 0.0);
     let v1 = Coord3::new(0.0, 0.0, 0.0);
 
     let lim = Lim {
         vel: Coord3::new(10.0, 10.0, 10.0),
-        acc: Coord3::new(20.0, 15.0, 5.0),
+        acc: Coord3::new(20.0, 20.0, 20.0),
     };
 
     let segment = Segment::new(q0, q1, v0, v1, 0.0, &lim);

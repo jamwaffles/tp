@@ -1,3 +1,10 @@
+- Come out of arc blend at the velocity we want
+- Just cruise at this velocity until end of path, where we decel to zero (accel time is 0)
+- If we then push another blend on the end of the path at same velocity, that's easy - just set
+  decel time to zero
+- If next blend will be faster (e.g. moving from G1 to G0), accel/decel to new velocity at start of
+  blend
+
 # Arc blend velocity and acceleration limits
 
 ## Each axis (cartesian)
